@@ -1,5 +1,18 @@
 <?php
-include '../conexion2.php';
+// Configuración dinámica de PDO leyendo las variables de entorno de Render / Aiven
+$servername = getenv('DB_HOST')     ?: "localhost"; 
+$username   = getenv('DB_USER')     ?: "root"; 
+$password   = getenv('DB_PASSWORD') ?: ""; 
+$dbname     = getenv('DB_NAME')     ?: "diseño_ayudas"; 
+$port       = getenv('DB_PORT')     ?: "3306"; 
+
+try {
+    // Inicializar conexión formal mediante el controlador PDO
+    $conexion = new PDO("mysql:host=$servername;port=$port;dbname=$dbname;charset=utf8mb4", $username, $password);
+    $conexion->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    die("Error crítico de conexión en el módulo de proveedores: " . $e->getMessage());
+}
 
 // ===== MANEJO DE PETICIONES AJAX PARA VALIDAR RIF =====
 if (isset($_GET['action']) && $_GET['action'] === 'verificar_rif' && isset($_GET['rif'])) {
@@ -7,21 +20,14 @@ if (isset($_GET['action']) && $_GET['action'] === 'verificar_rif' && isset($_GET
     
     $rif = strtoupper(trim($_GET['rif']));
     
-    // Validar formato básico antes de consultar BD
     if (!preg_match('/^[VEJGPC][1-9]\d{7,8}-\d$/', $rif)) {
         echo json_encode(['valid' => false, 'message' => 'Formato de RIF inválido']);
         exit;
     }
     
     try {
-        // ==========================================
-        // SOLUCIÓN: Validar solo por la parte numérica
-        // ==========================================
-        // Quitamos la primera letra para obtener el número (ej: de 'J123' obtenemos '123')
         $rifNumero = substr($rif, 1);
         
-        // Buscamos en la base de datos comparando solo el número, ignorando si es V, E, J, etc.
-        // SUBSTRING(ced_prv, 2) toma todo el texto desde el segundo carácter hasta el final.
         $stmt = $conexion->prepare("SELECT id_prov, ced_prv FROM proveedor WHERE SUBSTRING(ced_prv, 2) = :rif_num LIMIT 1");
         $stmt->bindParam(':rif_num', $rifNumero, PDO::PARAM_STR);
         $stmt->execute();
@@ -41,6 +47,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'verificar_rif' && isset($_GET
     exit;
 }
 
+// Carga segura de datos utilizando el puente PDO activo
 $proveedores = $conexion->query("SELECT * FROM proveedor")->fetchAll(PDO::FETCH_ASSOC);
 
 $provcuentas = [];
@@ -65,16 +72,12 @@ include 'nav/index.php';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Formulario Proveedor</title>
 
-    <!-- Bootstrap 4 CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     
-    <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap4.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap4.min.css">
     
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- SweetAlert2 para alertas estéticas -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
@@ -167,7 +170,7 @@ include 'nav/index.php';
 
     <script>
         let rifValidationTimeout = null;
-        let rifUltimoEstadoValido = null; // null=pendiente, true=OK, false=duplicado
+        let rifUltimoEstadoValido = null;
 
         function autofillRIFConNacionalidad() {
             const nac = document.getElementById('nac_prv');
@@ -213,22 +216,27 @@ include 'nav/index.php';
                 if (!/^[VEJGPC]$/.test(p) && valor.length > 0) {
                     input.classList.add('invalid');
                     mensaje.textContent = 'El RIF debe iniciar con V, E, J, G, P o C';
-                    mensaje.classList.add('show'); return false;
+                    text_content_show(mensaje); return false;
                 }
                 const s = valor.replace(/^[VEJGPC]/, '');
-                const num = s.includes('-') ? s.split('-')[0] : s;
+                const guion = s.includes('-');
+                const num = guion ? s.split('-')[0] : s;
                 if (num && num.charAt(0) === '0') {
                     input.classList.add('invalid');
                     mensaje.textContent = 'El número no puede iniciar con 0';
-                    mensaje.classList.add('show'); return false;
+                    text_content_show(mensaje); return false;
                 }
                 if (valor.length > 0) {
                     input.classList.add('invalid');
                     mensaje.textContent = 'Formato: Letra + 8-9 dígitos (sin 0) + guion + dígito';
-                    mensaje.classList.add('show'); return false;
+                    text_content_show(mensaje); return false;
                 }
                 mensaje.classList.remove('show'); return true;
             }
+        }
+
+        function text_content_show(element) {
+            element.classList.add('show');
         }
 
         function verificarRIFEnBD(rif, input, mensaje) {
@@ -246,7 +254,7 @@ include 'nav/index.php';
                         rifUltimoEstadoValido = false;
                     }
                 })
-                .catch(() => { rifUltimoEstadoValido = null; }); // Si falla internet, permite enviar y valida en PHP
+                .catch(() => { rifUltimoEstadoValido = null; });
         }
 
         function validarTeclaRIF(e, input) {
@@ -322,27 +330,23 @@ include 'nav/index.php';
             const nom = document.getElementById("nom_prv");
             const nro = document.getElementById("nro_cta");
             
-            // 1. Validar formato RIF
             const rifVal = ced.value.toUpperCase().trim();
             if (!/^[VEJGPC][1-9]\d{7,8}-\d$/.test(rifVal)) {
                 Swal.fire({ icon: 'warning', title: 'Formato Incorrecto', text: 'El RIF debe tener formato válido. Ej: J12345678-9' });
                 ced.focus(); return false;
             }
             
-            // 2. Validar duplicado (si el AJAX respondió que es falso)
             if (rifUltimoEstadoValido === false) {
                 Swal.fire({ icon: 'error', title: 'RIF Duplicado', text: 'Este número de RIF ya se encuentra registrado con otra letra o tipo.' });
                 ced.focus(); return false;
             }
             
-            // 3. Validar Nombre
             const nomVal = nom.value.trim();
             if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/.test(nomVal)) {
                 Swal.fire({ icon: 'warning', title: 'Nombre Inválido', text: 'El nombre solo permite letras y espacios' });
                 nom.focus(); return false;
             }
             
-            // 4. Validar Cuenta
             const ctaVal = nro.value.replace(/[^0-9]/g, '');
             if (/^0+$/.test(ctaVal) && ctaVal.length > 0) {
                 Swal.fire({ icon: 'warning', title: 'Cuenta Inválida', text: 'El número de cuenta no puede ser solo ceros' });
@@ -366,7 +370,7 @@ include 'nav/index.php';
     <button id="themeToggle" class="btn btn-outline-secondary"><i class="fas fa-moon"></i> Modo Oscuro</button>
     
     <div style="margin-left: 19%; display: flex; flex-direction: column;">
-        <div class="container-fluid mt-4" style="    width: 980px;">
+        <div class="container-fluid mt-4" style="width: 980px;">
             <h2 class="mb-4 titulop">Lista de Proveedores</h2>
             <div class="card shadow-sm p-3">
                 <table id="ayudasTable" class="table table-striped table-bordered dt-responsive nowrap" style="width:100%">
@@ -462,13 +466,27 @@ include 'nav/index.php';
     <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap4.min.js"></script>
     <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
     <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap4.min.js"></script>
-    <script src="https://cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json"></script>
 
     <script>
         $(document).ready(function() {
             $('#ayudasTable').DataTable({
                 responsive: true,
-                language: { url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json' },
+                language: {
+                    sProcessing: "Procesando...",
+                    sLengthMenu: "Mostrar _MENU_ registros",
+                    sZeroRecords: "No se encontraron resultados",
+                    sEmptyTable: "Ningún dato disponible en esta tabla",
+                    sInfo: "Mostrando registros del _START_ al _END_ de un total de _TOTAL_",
+                    sInfoEmpty: "Mostrando registros del 0 al 0 de un total de 0",
+                    sInfoFiltered: "(filtrado de un total de _MAX_ registros)",
+                    sSearch: "Buscar:",
+                    oPaginate: {
+                        sFirst: "Primero",
+                        sLast: "Último",
+                        sNext: "Siguiente",
+                        sPrevious: "Anterior"
+                    }
+                },
                 pageLength: 5, lengthMenu: [[5, 10, 25, -1], [5, 10, 25, "Todos"]],
                 order: [[0, 'asc']]
             });

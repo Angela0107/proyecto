@@ -78,13 +78,13 @@ $monto_formateado = number_format($monto, 2, ',', '.');
 
 <?php
 // Conexión a la base de datos
-$servername = "localhost"; 
-$username = "root"; 
-$password = ""; 
-$dbname = "diseño_ayudas"; 
+$servername = getenv("DB_HOST")     ?: "localhost";
+$username   = getenv("DB_USER")     ?: "root";
+$password   = getenv("DB_PASSWORD") ?: "";
+$dbname     = getenv("DB_NAME")     ?: "diseño_ayudas";
+$port       = getenv("DB_PORT")     ?: "3306";
 
-
-$conn = new mysqli($servername, $username, $password, $dbname);
+$conn = new mysqli($servername, $username, $password, $dbname, $port);
 
 // Verificar conexión
 if ($conn->connect_error) {
