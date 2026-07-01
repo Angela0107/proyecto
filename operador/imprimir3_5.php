@@ -1,0 +1,1091 @@
+<?php
+// Conexión a la base de datos
+$servername = "localhost"; // Cambia esto si es necesario
+$username = "root"; // Cambia esto si es necesario
+$password = ""; // Cambia esto si es necesario
+$dbname = "diseño_ayudas"; // Cambia esto por el nombre de tu base de datos
+
+
+session_start();
+$last_id = $_SESSION['last_id'];
+$solicitudes_string = $_SESSION['solicitudes'];
+
+  // Convertir la cadena de solicitudes en un array
+  $solicitudes_array = explode(',', $solicitudes_string);
+
+
+  // Contar el número de registros
+$num_registros = count($solicitudes_array);
+
+// Calcular el punto medio y multiplicarlo por 10
+$punto_medio = ceil($num_registros - 33) * 10;
+
+
+  // $solicitudes = '2109, 2509, 2535, 1617, 3006, 3007';
+  // $monto = '123245';
+  // $fechanueva = '2023-11-21';
+  // $id_provcuenta = '10';
+
+  $conn = new mysqli($servername, $username, $password, $dbname);
+
+  // Verificar conexión
+  if ($conn->connect_error) {
+    die("Conexión fallida: " . $conn->connect_error);
+  }
+
+
+
+
+
+
+  // Consulta SQL para obtener datos de provcuenta
+  $sql_provcuenta = "SELECT *
+                   FROM puntocta WHERE id = '$last_id'";
+
+  $result_provcuenta = $conn->query($sql_provcuenta);
+
+  // Inicializar variables para almacenar los resultados de provcuenta
+  $monto = $fecpto = $asunto = $nropto = null;
+
+  // Verificar si hay resultados
+  if ($result_provcuenta->num_rows > 0) {
+    // Salida de cada fila
+    while ($row = $result_provcuenta->fetch_assoc()) {
+      // Almacenar los resultados en variables
+      $monto = $row['monto'];
+      $fecpto = $row['fecpto'];
+      $asunto = $row['asunto'];
+      $nropto = $row['nropto'];
+    }
+  } else {
+    $monto = $fecpto = $asunto = $nropto = "No se encontraron cuentas de proveedor.";
+  }
+
+  // Obtener la parte del texto hasta el final deseado
+$nueva_variable = substr($asunto, 0, strpos($asunto, ")") + 1);
+
+// Reemplazar la última coma por un punto
+$nueva_variable = preg_replace('/,(?=[^,]*$)/', '.', $nueva_variable);
+
+$monto_formateado = number_format($monto, 2, ',', '.');
+
+  // Consulta SQL
+  $sql = "SELECT COUNT(s.idsolicitud) AS total_solicitudes, s.idsolicitud, s.numsol, s.nacio, s.cedula, s.descripcion, s.nombre FROM solicitud s INNER JOIN beneficiario b ON b.cedula = s.cedula
+  WHERE s.idsolicitud IN ($solicitudes_string) GROUP BY s.idsolicitud ;";
+  $result = $conn->query($sql);
+
+  // Inicializar variables para las tablas
+  $tabla1 = '';
+  $tabla2 = '';
+  $tabla3 = '';
+  $tabla10 = ''; // Variable para guardar la información de la tabla 1
+  $tabla20 = ''; // Variable para guardar la información de la tabla 2
+  $tabla30 = ''; // Variable para guardar la información de la tabla 3
+  $currentTable = 1; // Contador de tablas
+  $maxRowsPerTable = [170, $punto_medio, 160, 98500]; // Alturas de los contenedores
+  $rowsInCurrentTable = 0; // Contador de filas en la tabla actual
+  $contador = 1;
+
+  if ($result->num_rows > 0) {
+
+    while ($row = $result->fetch_assoc()) {
+      // Si hemos alcanzado el límite de filas para la tabla actual, creamos una nueva tabla
+      if ($rowsInCurrentTable == ($maxRowsPerTable[$currentTable - 1] / 10)) { // Asumiendo que cada fila ocupa aproximadamente 50px de altura
+        $currentTable++;
+        $rowsInCurrentTable = 0; // Reiniciar el contador de filas
+      }
+
+      // Si hemos superado el número de tablas, salimos del bucle
+      if ($currentTable > count($maxRowsPerTable)) {
+        break;
+      }
+
+      // Si es la primera fila de la tabla actual, comenzamos a crear la tabla
+      if ($rowsInCurrentTable == 0) {
+        if ($currentTable == 1) {
+          $tabla1 = '<div><table border="1" style="width: 100%; border-collapse: collapse;">';
+          $tabla1 .= '<thead>
+                        <tr>
+                            <th>N°</th>
+                    <th>Cédula de identidad</th>
+                    <th>Nombres y Apellidos del solicitante</th>
+                    <th>Descripción</th>
+                        </tr>
+                      </thead>
+                      <tbody>';
+        } elseif ($currentTable == 2) {
+          $tabla2 = '<div><table border="1" style="width: 100%; border-collapse: collapse;">';
+          $tabla2 .= '<thead>
+                        <tr>
+                           <th>N°</th>
+                    <th>Cédula de identidad</th>
+                    <th>Nombres y Apellidos del solicitante</th>
+                    <th>Descripción</th>
+                        </tr>
+                      </thead>
+                      <tbody>';
+        } elseif ($currentTable == 3) {
+          $tabla3 = '<div><table border="1" style="width: 100%; border-collapse: collapse;">';
+          $tabla3 .= '<thead>
+                        <tr>
+                            <th>N°</th>
+                    <th>Cédula de identidad</th>
+                    <th>Nombres y Apellidos del solicitante</th>
+                    <th>Descripción</th>
+                        </tr>
+                      </thead>
+                      <tbody>';
+        }
+      }
+
+      // Agregar la fila a la tabla correspondiente
+      if ($currentTable == 1) {
+        $tabla1 .= '<tr>
+                    <td>' . $contador . '</td>
+                    <td>' . htmlspecialchars($row['nacio']) . '-' . htmlspecialchars($row['cedula']) . '</td>
+                    <td>' . htmlspecialchars($row['nombre']) . '</td>
+                    <td>' . htmlspecialchars($row['descripcion']) . '</td>
+                  </tr>';
+        $tabla10 .= '<tr>
+                    <td>' . $contador . '</td>
+                   <td>' . htmlspecialchars($row['nacio']) . '-' . htmlspecialchars($row['cedula']) . '</td>
+                    <td>' . htmlspecialchars($row['nombre']) . '</td>
+                    <td>' . htmlspecialchars($row['descripcion']) . '</td>
+                  </tr>';
+      } elseif ($currentTable == 2) {
+        $tabla2 .= '<tr>
+                    <td>' . $contador . '</td>
+                   <td>' . htmlspecialchars($row['nacio']) . '-' . htmlspecialchars($row['cedula']) . '</td>
+                    <td>' . htmlspecialchars($row['nombre']) . '</td>
+                    <td>' . htmlspecialchars($row['descripcion']) . '</td>
+                  </tr>';
+        $tabla20 .= '<tr>
+                    <td>' . $contador . '</td>
+                   <td>' . htmlspecialchars($row['nacio']) . '-' . htmlspecialchars($row['cedula']) . '</td>
+                    <td>' . htmlspecialchars($row['nombre']) . '</td>
+                    <td>' . htmlspecialchars($row['descripcion']) . '</td>
+                  </tr>';
+      } elseif ($currentTable == 3) {
+        $tabla3 .= '<tr>
+                    <td>' . $contador . '</td>
+                    <td>' . htmlspecialchars($row['nacio']) . '-' . htmlspecialchars($row['cedula']) . '</td>
+                    <td>' . htmlspecialchars($row['nombre']) . '</td>
+                    <td>' . htmlspecialchars($row['descripcion']) . '</td>
+                  </tr>';
+        $tabla30 .= '<tr>
+                    <td>' . $contador . '</td>
+                    <td>' . htmlspecialchars($row['nacio']) . '-' . htmlspecialchars($row['cedula']) . '</td>
+                    <td>' . htmlspecialchars($row['nombre']) . '</td>
+                    <td>' . htmlspecialchars($row['descripcion']) . '</td>
+                  </tr>';
+      }
+
+      $rowsInCurrentTable++; // Incrementar el contador de filas
+      $contador++;
+    }
+
+    // Cerrar las tablas si se han creado
+    if ($rowsInCurrentTable > 0) {
+      if ($currentTable >= 1) {
+        $tabla1 .= '</tbody></table></div>';
+        $tabla10 = '<div><table border="1" style="width: 100%; border-collapse: collapse;">
+                          <thead>
+                            <tr>
+                               <th>N°</th>
+                    <th>Cédula de identidad</th>
+                    <th>Nombres y Apellidos del solicitante</th>
+                    <th>Descripción</th>
+                            </tr>
+                          </thead>
+                          <tbody>' . $tabla10 . '</tbody>
+                        </table></div>';
+      }
+      if ($currentTable >= 2) {
+        $tabla2 .= '</tbody></table></div>';
+        $tabla20 = '<div><table border="1" style="width: 100%; border-collapse: collapse;">
+                          <thead>
+                            <tr>
+                               <th>N°</th>
+                    <th>Cédula de identidad</th>
+                    <th>Nombres y Apellidos del solicitante</th>
+                    <th>Descripción</th>
+                            </tr>
+                          </thead>
+                          <tbody>' . $tabla20 . '</tbody>
+                        </table></div>';
+      }
+      if ($currentTable >= 3) {
+        $tabla3 .= '</tbody></table></div>';
+        $tabla30 = '<div><table border="1" style="width: 100%; border-collapse: collapse;">
+                          <thead>
+                            <tr>
+                              <th>N°</th>
+                    <th>Cédula de identidad</th>
+                    <th>Nombres y Apellidos del solicitante</th>
+                    <th>Descripción</th>
+                            </tr>
+                          </thead>
+                          <tbody>' . $tabla30 . '</tbody>
+                        </table></div>';
+      }
+    }
+  } else {
+    $tabla1 = '<div><p>No se encontraron resultados.</p></div>'; // Envolver el mensaje en un div
+  }
+
+// Cerrar la conexión
+$conn->close();
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    @page {
+      size: letter;
+      /* Tamaño carta */
+      margin: 1in;
+      /* Márgenes de 1 pulgada */
+    }
+
+
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 12pt;
+      line-height: 1.5;
+      background-color: #fff;
+      /* Fondo blanco para el PDF */
+      margin: 0;
+      /* Sin márgenes */
+      padding: 0;
+      /* Sin padding */
+    }
+
+    table {
+            margin-top: 20px;
+    width: 816px; /* Ancho fijo de la tabla */
+    border-collapse: collapse; /* Para que las celdas se vean unidas */
+    font-size: x-small;
+    font-size: unset;
+}
+
+th{
+    height: 22px;
+}
+
+tr{
+    height: 22px;
+}
+
+th{
+      text-align: center;
+    }
+
+
+    .container {
+      max-width: 8.5in;
+      /* Ancho máximo para carta */
+      margin: auto;
+      /* Centrar el contenedor */
+      padding: 0px;
+      /* Espaciado interno */
+      border-left: 1cm solid #ffffff;
+      /* Borde izquierdo */
+      border-right: 1cm solid #ffffff;
+      /* Borde derecho */
+    }
+
+    header {
+      height: 2cm;
+      /* Altura del encabezado */
+      overflow: hidden;
+      /* Ocultar contenido que exceda la altura */
+      text-align: center;
+      /* Centrar el contenido */
+    }
+
+    footer {
+      height: 2cm;
+      /* Altura del pie de página */
+      overflow: hidden;
+      /* Ocultar contenido que exceda la altura */
+      text-align: center;
+      /* Centrar el contenido */
+      margin-top: 5px;
+      /* Espacio entre el contenido y el pie de página */
+    }
+
+    .form-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0px;
+
+    }
+
+    .form-row1 {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0px;
+      height: 50px;
+
+    }
+
+    .form-row2 {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0px;
+      height: 130px;
+
+    }
+
+    .bordered {
+      padding: 10px;
+      border-radius: 5px;
+      background-color: #fff;
+      width: 100%;
+      box-shadow: 0 0 0 1px black;
+      /* Cuadro visible sin bordes */
+    }
+
+    .borderedpunto,
+    .borderedfec,
+    .borderedcuenta,
+    .borderedfirma {
+      padding-top: 2px;
+      padding-left: 2px;
+      padding-bottom: 2px;
+      padding-right: 2px;
+      width: 48%;
+      font-size: 15px;
+      /* Ajustar el ancho para que quepan dos en una fila */
+    }
+
+    .borderedfec {
+      justify-items: center;
+    }
+
+    .borderedpunto {
+      justify-items: center;
+    }
+
+    .depara {
+      width: 50px;
+    }
+
+    .borderedcuenta2 {
+      justify-items: center;
+      text-align: center;
+      padding-top: 25px;
+      padding-left: 2px;
+      padding-bottom: 2px;
+      padding-right: 2px;
+      width: 48%;
+      font-size: 15px;
+    }
+
+    .asunto_argumento {
+      justify-items: center;
+      padding-top: 2px;
+      padding-left: 2px;
+      padding-bottom: 2px;
+      padding-right: 2px;
+      text-align: center;
+    }
+
+    .borderedasunto {
+            height: 70px;
+      padding-top: 2px;
+      padding-bottom: 2px;
+      padding-left: 2px;
+      padding-right: 2px;
+      width: 100%;
+    }
+
+    .borderedargumento {
+      height: 320px;
+      padding-top: 2px;
+      padding-bottom: 2px;
+      padding-left: 2px;
+      padding-right: 2px;
+      width: 100%;
+    }
+
+    .borderedargumento1 {
+      height: 587px;
+      padding-top: 2px;
+      padding-bottom: 2px;
+      padding-left: 2px;
+      padding-right: 2px;
+      width: 100%;
+    }
+
+    .borderedargumento3 {
+      height: 687px;
+      padding-top: 2px;
+      padding-bottom: 2px;
+      padding-left: 2px;
+      padding-right: 2px;
+      width: 100%;
+    }
+
+    .borderedargumento2 {
+      height: 425px;
+      padding-top: 2px;
+      padding-bottom: 2px;
+      padding-left: 2px;
+      padding-right: 2px;
+      width: 100%;
+    }
+
+    .borderedfirma {
+      width: 100%;
+    }
+
+    .borderedfirma_1 {
+      width: 100%;
+      height: 300px;
+    }
+
+    .borderedfirmas {
+      width: 100%;
+      height: 550px;
+    }
+
+    .borderedfirmass {
+      width: 100%;
+      height: 331px;
+    }
+
+
+    .borderedfirma_pagi22 {
+      width: 100%;
+      height: 510px;
+    }
+
+    .borderedfirma_pagi32 {
+      width: 100%;
+      height: 776px;
+    }
+
+
+    .texto {
+      font-weight: bold;
+      font-size: smaller;
+    }
+
+
+    .texto2 {
+      font-weight: bold;
+      font-size: smaller;
+    }
+
+    .subtitulo {
+      margin-top: 5px;
+    }
+
+    .subtitulo2 {
+      font-size: x-small;
+
+    }
+
+    .subtitulo3 {
+      font-size: x-small;
+      margin-top: 0px;
+
+    }
+
+    .flex {
+      display: flex;
+
+    }
+
+    .punto {
+      margin-left: 50px;
+    }
+
+    button {
+      padding: 10px 15px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    img {
+      width: 100%;
+      max-height: 100%;
+    }
+
+    h5 {
+      margin-top: 0px;
+      margin-bottom: 0px;
+    }
+
+    .small-textt {
+      font-size: 10px;
+      /* Ajusta el tamaño de la fuente según sea necesario */
+      line-height: 1;
+      /* Opcional: ajusta el interlineado */
+      margin-top: 4px;
+      margin-left: 35px;
+    }
+
+    .small-texttt {
+      font-size: 10px;
+      /* Ajusta el tamaño de la fuente según sea necesario */
+      line-height: 1;
+      /* Opcional: ajusta el interlineado */
+      margin-top: 60px;
+      margin-left: 29px;
+    }
+
+    .small-text {
+      font-size: 10px;
+      /* Ajusta el tamaño de la fuente según sea necesario */
+      line-height: 1;
+      /* Opcional: ajusta el interlineado */
+    }
+
+
+    .header-container {
+      display: flex;
+      /* Utiliza flexbox para alinear los elementos */
+      justify-content: space-around;
+      align-items: center;
+      /* Alinea verticalmente al centro */
+      height: 60px;
+    }
+
+    /* Estilos para impresión */
+    @media print {
+      body {
+        background-color: #fff;
+        /* Asegúrate de que el fondo sea blanco */
+      }
+
+      button {
+        display: none;
+        /* Ocultar el botón al imprimir */
+      }
+
+      img {
+        width: 100%;
+        max-height: 100%;
+      }
+
+      .texto2 {
+        font-size: 12px;
+
+
+      }
+      .button {
+                display: none;
+                /* Ocultar el botón al imprimir */
+            }
+    }
+
+    .texto_asunto {
+      height: auto;
+      text-align: justify;
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 13px;
+
+    }
+
+    .texto_argumento {
+      height: auto;
+      text-align: justify;
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 11px;
+
+    }
+
+    .textooo {
+      height: auto;
+      text-align: justify;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .textooo_peque {
+      height: auto;
+      text-align: justify;
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 14.5px;
+    }
+
+    .textooo_grande {
+      height: auto;
+      text-align: justify;
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 14pt;
+    }
+
+    .textooo_grande2 {
+      height: auto;
+      text-align: justify;
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 12.5pt;
+    }
+
+    .textooo2 {
+      height: 360px;
+      text-align: justify;
+      width: 100%;
+    }
+
+    .textoo {
+      text-align: justify;
+      width: 100%;
+      height: 96px;
+    }
+
+    .textoooo {
+      text-align: justify;
+      width: 100%;
+      height: 600px;
+    }
+
+    .subtitulo4 {
+      margin-left: 80%;
+    }
+
+    .container2 {
+      border-left-width: 0px;
+      border-right-width: 0px;
+    }
+
+    .firma-linea {
+      border: none;
+      /* Elimina el borde predeterminado */
+      border-top: 1px solid black;
+      /* Crea una línea delgada */
+
+      width: 250px;
+      margin-bottom: 0px;
+      margin-top: 10px;
+    }
+
+    .texto1234{
+    font-weight: bold;
+    margin-left: 500px;
+    height: 25px;
+}
+
+.flex2{
+    display: flex;
+    font-size: large;
+}
+
+    .firma-linea2 {
+      border: none;
+      /* Elimina el borde predeterminado */
+      border-top: 1px solid black;
+      /* Crea una línea delgada */
+
+      width: 250px;
+      margin-bottom: 0px;
+
+      margin-top: 73px;
+    }
+
+    .volver-form {
+      display: flex;
+      justify-content: center;
+      /* Centra el formulario horizontalmente */
+      margin-top: 20px;
+      /* Espacio superior */
+    }
+
+    .btn1 {
+      margin-left: 700px;
+      margin-top: 0px;
+      padding: 10px 20px;
+      /* Espaciado interno */
+      background-color: #007bff;
+      /* Color de fondo */
+      color: white;
+      /* Color del texto */
+      border: none;
+      /* Sin borde */
+      border-radius: 5px;
+      /* Bordes redondeados */
+      font-size: 16px;
+      /* Tamaño de fuente */
+      cursor: pointer;
+      /* Cambia el cursor al pasar el mouse */
+      transition: background-color 0.3s;
+      /* Transición suave para el color de fondo */
+    }
+
+    .continua{
+    margin-top: 0px;
+    margin-bottom: 0px;
+    justify-self: end;
+    }
+    h6{
+      margin-top: 0px;
+    margin-bottom: 0px;
+    }
+  </style>
+</head>
+
+<body>
+
+
+  <div class="container">
+    <header>
+      <img src="../imagenes/cabecera.jpg" alt="Descripción de la imagen 1" class="img">
+    </header>
+
+    <div class="form-row1">
+      <div class="borderedfec bordered">
+        <strong>
+          <div class="textos">Fecha</div>
+        </strong>
+        <div class="subtitulo1" name="fecha" id="fecha" required><?php echo $fecpto ?></div>
+      </div>
+      <div class="borderedpunto bordered">
+        <strong>
+          <div class="texto1">PUNTO DE CUENTA </div>
+        </strong>
+        <div class="subtitulol">Atencion al Ciudadano</div>
+      </div>
+      <div class="borderedcuenta bordered">
+        <strong>
+          <center>
+            <div class="texto">Nro. Punto de cuenta</div>
+          </center>
+        </strong>
+        <strong>
+          <div class="" style="display: flex;">
+            <div style="margin-left: 110px;"><?php echo $nropto ?></div>
+            <div style="margin-left: 45px;">Pag 1/ 3</div>
+          </div>
+      </div>
+    </div>
+    </strong>
+
+
+    <div class="form-row">
+      <div class="depara bordered">
+        <h5>Para:</h5>
+      </div>
+      <div class="borderedfirma bordered">
+        <h5>DR. SILFREDO ZAMBRANO</h5>
+        <div class="subtitulo2" name="id_func" id="id_func" required>ALCALDE DEL MUNICIPIO SAN CRISTOBAL</div>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="depara bordered">
+        <h5>De:</h5>
+      </div>
+      <div class="borderedfirma bordered">
+        <h5>LCDA. KARLA JUAREZ</h5>
+        <div class="subtitulo2" name="id_func2" id="id_func2" required>DIRECTORA DE ATENCION AL CIUDADANO</div>
+      </div>
+    </div>
+
+    <form method="POST">
+      <div class="form-row">
+        <div class="asunto_argumento bordered">
+          <strong>
+            <div class="texto">ASUNTO:</div>
+          </strong>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="borderedasunto bordered">
+          <div class="texto_asunto"><?php echo $nueva_variable?>.</div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="asunto_argumento bordered">
+          <strong>
+            <div class="texto">ARGUMENTO:</div>
+          </strong>
+        </div>
+      </div>
+
+
+      <div class="form-row">
+        <div class="borderedargumento1 bordered">
+          <div class="texto_argumento">
+            <div class="texto_asunto"><?php echo $asunto?></div>
+            <?php echo $tabla10 ?>
+          </div>
+        </div>
+      </div>
+      <div class="continua"><h6>Continuación en la pagina 2...</h6></div>
+
+
+
+
+
+  </form>
+
+  <footer>
+    <img src="../imagenes/piepagina.jpg" alt="Descripción de la imagen 1" class="img">
+  </footer>
+
+  
+  </div>
+</body>
+
+
+
+<body>
+
+
+  <div class="container">
+    <header>
+      <img src="../imagenes/cabecera.jpg" alt="Descripción de la imagen 1" class="img">
+    </header>
+
+    <div class="form-row1">
+      <div class="borderedfec bordered">
+        <strong>
+          <div class="textos">Fecha</div>
+        </strong>
+        <div class="subtitulo1" name="fecha" id="fecha" required><?php echo $fecpto ?></div>
+      </div>
+      <div class="borderedpunto bordered">
+        <strong>
+          <div class="texto1">PUNTO DE CUENTA </div>
+        </strong>
+        <div class="subtitulol">Atencion al Ciudadano</div>
+      </div>
+      <div class="borderedcuenta bordered">
+        <strong>
+          <center>
+            <div class="texto">Nro. Punto de cuenta</div>
+          </center>
+        </strong>
+        <strong>
+          <div class="" style="display: flex;">
+            <div style="margin-left: 110px;"><?php echo $nropto ?></div>
+            <div style="margin-left: 45px;">Pag 2/ 3</div>
+          </div>
+      </div>
+    </div>
+    </strong>
+
+
+    <div class="form-row">
+      <div class="depara bordered">
+        <h5>Para:</h5>
+      </div>
+      <div class="borderedfirma bordered">
+        <h5>DR. SILFREDO ZAMBRANO</h5>
+        <div class="subtitulo2" name="id_func" id="id_func" required>ALCALDE DEL MUNICIPIO SAN CRISTOBAL</div>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="depara bordered">
+        <h5>De:</h5>
+      </div>
+      <div class="borderedfirma bordered">
+        <h5>LCDA. KARLA JUAREZ</h5>
+        <div class="subtitulo2" name="id_func2" id="id_func2" required>DIRECTORA DE ATENCION AL CIUDADANO</div>
+      </div>
+    </div>
+
+    <form method="POST">
+      <div class="form-row">
+        <div class="asunto_argumento bordered">
+          <strong>
+            <div class="texto">ARGUMENTO:</div>
+          </strong>
+        </div>
+      </div>
+
+
+      <div class="form-row">
+        <div class="borderedargumento3 bordered">
+          <div class="texto_argumento">
+            <?php echo $tabla20 ?>
+          </div>
+        </div>
+      </div>
+      <div class="continua"><h6>Continuación en la pagina 3...</h6></div>
+
+
+
+
+
+  </form>
+
+  <footer>
+    <img src="../imagenes/piepagina.jpg" alt="Descripción de la imagen 1" class="img">
+  </footer>
+
+  
+  </div>
+</body>
+
+
+<body>
+
+
+  <div class="container">
+    <header>
+      <img src="../imagenes/cabecera.jpg" alt="Descripción de la imagen 1" class="img">
+    </header>
+
+    <div class="form-row1">
+      <div class="borderedfec bordered">
+        <strong>
+          <div class="textos">Fecha</div>
+        </strong>
+        <div class="subtitulo1" name="fecha" id="fecha" required><?php echo $fecpto ?></div>
+      </div>
+      <div class="borderedpunto bordered">
+        <strong>
+          <div class="texto1">PUNTO DE CUENTA </div>
+        </strong>
+        <div class="subtitulol">Atencion al Ciudadano</div>
+      </div>
+      <div class="borderedcuenta bordered">
+        <strong>
+          <center>
+            <div class="texto">Nro. Punto de cuenta</div>
+          </center>
+          <div class="" style="display: flex;">
+            <div style="margin-left: 110px;"><?php echo $nropto ?></div>
+            <div style="margin-left: 45px;">Pag 3/ 3</div>
+          </div>
+      </div>
+    </div>
+    </strong>
+
+    <div class="form-row">
+      <div class="depara bordered">
+        <h5>Para:</h5>
+      </div>
+      <div class="borderedfirma bordered">
+        <h5>DR. SILFREDO ZAMBRANO</h5>
+        <div class="subtitulo2" name="id_func" id="id_func" required>ALCALDE DEL MUNICIPIO SAN CRISTOBAL</div>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="depara bordered">
+        <h5>De:</h5>
+      </div>
+      <div class="borderedfirma bordered">
+        <h5>LCDA. KARLA JUAREZ</h5>
+        <div class="subtitulo2" name="id_func2" id="id_func2" required>DIRECTORA DE ATENCION AL CIUDADANO</div>
+      </div>
+    </div>
+
+    <form method="POST">
+  
+
+      <div class="form-row">
+        <div class="asunto_argumento bordered">
+          <strong>
+            <div class="texto">ARGUMENTO:</div>
+          </strong>
+        </div>
+      </div>
+
+
+      <div class="form-row">
+        <div class="borderedargumento2 bordered">
+          <div class="texto_argumento">
+            <?php echo $tabla30 ?>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row2">
+        <div class="borderedcuenta2 bordered">
+          <strong>
+            <div class="texto small-text2">Aprobación</div>
+          </strong>
+          <div class="checkbox-container">
+            <input type="checkbox" id="respuesta_si" name="respuesta" value="si">
+            <label for="respuesta_si">Sí</label>
+          </div>
+          <div class="checkbox-container">
+            <input type="checkbox" id="respuesta_no" name="respuesta" value="no">
+            <label for="respuesta_no">No</label>
+          </div>
+        </div>
+        <div class="borderedcuenta bordered">
+
+          <div class="texto">
+            <center>
+              <hr class="firma-linea2">
+              <div class="subtitulo3" name="id_func2" id="id_func2" required>DR. SILFREDO ZAMBRANO <br> ALCALDE DEL MUNICIPIO SAN CRISTOBAL</div>
+              <div class="subtitulo2 small-text" name="id_func2" id="id_func2" required>Acta N° 043-2021 Según Gaceta Extraordinaria</div>
+              <div class="subtitulo2 small-text" name="id_func2" id="id_func2" required>N° 046-2021 de fecha 03 de diciembre 2021</div>
+            </center>
+          </div>
+
+        </div>
+        <div class="borderedcuenta bordered">
+          <strong>
+            <center>
+              <div class="texto2" name="nota_alcalde" id="nota_alcalde">Instrucciones adicionales del Alcalde</div>
+            </center>
+          </strong>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="borderedfirma bordered">
+          <strong>
+               <div class="flex2"><div>Monto : </div><div class="texto1234">BS  <?php echo $monto_formateado?></div></div> 
+          </strong>
+        </div>
+      </div>
+
+
+      <div class="form-row">
+        <div class="borderedfirma bordered">
+          <div class="header-container">
+            <h4>PREPARADO</h4>
+            <h4>PRESENTADO</h4>
+          </div>
+          <center>
+            <hr class="firma-linea">
+            <div class="subtitulo2" name="id_func2" id="id_func2" required>LCDA. KARLA JUAREZ <br> DIRECTORA DE ATENCION AL CIUDADANO</div>
+            <div class="subtitulo2 small-text" name="id_func2" id="id_func2" required>Segun Resolución N° 122-2023 de fecha 17/08/2023</div>
+          </center>
+        </div>
+      </div>
+    </form>
+
+    <footer>
+      <img src="../imagenes/piepagina.jpg" alt="Descripción de la imagen 1" class="img">
+    </footer>
+    <center><button id="btnCrearPDF" onclick="window.print()">Imprimir</button>
+    <div class="button">
+                <a href="aprobar.php" class="btn1" style="margin-right: 5px">Volver</a>
+        </center>
+    </div>
+
+</body>
+
+</html>
+
+<body>

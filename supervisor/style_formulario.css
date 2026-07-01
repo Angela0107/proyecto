@@ -1,0 +1,161 @@
+
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 20px;
+        font-size: 15px;
+    }
+
+    .wrapper .top_navbar {
+        width: calc(100% - 20px);
+        height: 90px;
+        display: flex;
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        z-index: 1000;
+        /* Asegúrate de que tenga un z-index alto */
+
+    }
+
+    h1,
+    h2 {
+        color: #333;
+    }
+
+    form {
+        background: #fff;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+
+    .form2 {
+        background: #fff;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+
+    .form-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        /* Espaciado entre filas */
+    }
+
+    .form-group {
+        flex: 1;
+        /* Para que cada grupo ocupe el mismo espacio */
+        margin-right: 1rem;
+        /* Espaciado entre columnas */
+    }
+
+    .form-group:last-child {
+        margin-right: 0;
+        /* Eliminar margen derecho en el último grupo */
+    }
+
+    label {
+        display: block;
+        margin: 10px 0 5px;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    select {
+        width: 98%;
+        padding: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    input[type="submit"] {
+        background-color: #2e4ead;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-right: 10px;
+    }
+
+    input[type="submit"]:hover {
+        background-color: #007bff;
+    }
+
+    table {
+        width: 96%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    th,
+    td {
+        padding: 10px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+
+    th {
+        background-color: #f2f2f2;
+    }
+
+    tr:hover {
+        background-color: #f1f1f1;
+    }
+
+    button {
+        background-color: #2e4ead;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background-color: #007bff;
+    }
+
+
+
+
+    .hidden {
+        display: none;
+    }
+
+    .form-inline{
+  display: block;
+}
+
+button {
+    background-color: #2e4ead; /* Color de fondo */
+    color: white; /* Color del texto */
+    border: none; /* Sin borde */
+    padding: 10px 20px; /* Espaciado interno */
+    text-align: center; /* Centrar texto */
+    text-decoration: none; /* Sin subrayado */
+    display: inline-block; /* Mostrar como bloque en línea */
+    font-size: 16px; /* Tamaño de fuente */
+    margin: 4px 2px; /* Margen */
+    cursor: pointer; /* Cambiar cursor al pasar el ratón */
+    border-radius: 5px; /* Bordes redondeados */
+  
+}
+
+button:hover {
+    background-color: #007bff; /* Color de fondo al pasar el ratón */
+    transform: scale(1.05); /* Aumentar ligeramente el tamaño */
+}
+
+button:active {
+    background-color: #3e8e41; /* Color de fondo al hacer clic */
+    transform: scale(0.95); /* Reducir ligeramente el tamaño */
+}
+
