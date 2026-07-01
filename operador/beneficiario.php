@@ -1,14 +1,6 @@
 <?php
-$servername = 'localhost';
-$username = 'root';
-$password = '';
-$dbname = 'diseño_ayudas';
-
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-if ($conn->connect_error) {
-    die("Conexión fallida: " . $conn->connect_error);
-}
+// CORRECCIÓN: Importar la conexión dinámica central de la raíz
+require_once "../db.php";
 
 // Función para crear beneficiario
 function crearBeneficiario($nac_ben, $ced_ben, $nom_ben, $ape_ben, $dir_ben, $cod_par, $cor_ben, $tlf_ben, $sec_ben)
@@ -247,13 +239,10 @@ include 'nav/index.php';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registros de Beneficiarios</title>
 
-      <!-- Bootstrap 4 CSS -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+      <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
-    <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap4.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/3.0.3/css/responsive.bootstrap4.min.css">
 
@@ -408,7 +397,6 @@ include 'nav/index.php';
 </head>
 
 <body class="light-theme">
-    <!-- Botón de cambio de tema -->
     <button id="themeToggle" class="btn btn-outline-secondary">
         <i class="fas fa-moon"></i> Modo Oscuro
     </button>
@@ -426,7 +414,6 @@ include 'nav/index.php';
                 <?php endif; ?>
 
                 <div class="form2">
-    <!-- ✅ Añadimos data-table="true" para forzar lectura del DOM -->
     <table id="beneficiariosTable" class="table table-striped table-bordered dt-responsive nowrap" style="width:100%" data-table="true">
         <thead>
             <tr>
@@ -502,7 +489,6 @@ include 'nav/index.php';
                     <input type="hidden" name="ids_bene" value="<?= htmlspecialchars($predefinedValues['ids_bene']) ?>">
                     <input type="hidden" name="cor_ben_value" id="cor_ben_value" value="<?= htmlspecialchars($predefinedValues['cor_ben_value']) ?>">
 
-                    <!-- Fila 1: Nacionalidad y Cédula -->
                     <div class="form-row mb-3">
                         <div class="col-md-6">
     <label for="nac_ben">Nacionalidad</label>
@@ -525,12 +511,10 @@ include 'nav/index.php';
                                 value="<?= htmlspecialchars($predefinedValues['ced_ben']) ?>"
                                 maxlength="9" pattern="[1-9][0-9]{0,8}" required inputmode="numeric"
                                 title="La cédula debe tener 1-9 dígitos, solo números, y no comenzar con 0">
-                            <!-- Campo oculto para guardar cédula original -->
                             <input type="hidden" name="ced_ben_original" id="ced_ben_original" value="<?= htmlspecialchars($predefinedValues['ced_ben']) ?>">
                             </div>
                     </div>
 
-                    <!-- Fila 2: Nombre y Apellido -->
                     <div class="form-row mb-3">
                         <div class="col-md-6">
                             <label for="nom_ben">Nombres</label>
@@ -563,7 +547,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
 
-                    <!-- Fila 3: Parroquia y Sector -->
                     <div class="form-row mb-3">
                         <div class="col-md-6">
                             <label for="parroquia">Parroquia</label>
@@ -582,12 +565,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             <select id="sec_ben" name="sec_ben" class="form-control" required
                                 <?= !$selectedParroquia ? 'disabled' : '' ?>>
                                 <option value="">-- Seleccione --</option>
-                                <!-- Opciones se llenan vía JS -->
-                            </select>
+                                </select>
                         </div>
                     </div>
 
-                    <!-- Fila 4: Dirección y Teléfono -->
                     <div class="form-row mb-3">
                         <div class="col-md-6">
                         <label for="dir_ben">Dirección</label>
@@ -621,7 +602,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
 
-                    <!-- Fila 5: Tipo de beneficiario -->
                     <div class="form-row mb-3">
                         <div class="col-md-12">
                             <label>Tipo de beneficiario</label><br>
@@ -651,7 +631,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
 
-                    <!-- Botones -->
                     <div class="text-center mt-4">
                         <button type="submit" name="crear" class="btn btn-success" id="btnCrear">
                             <i class="fas fa-plus"></i> Crear Beneficiario
@@ -1042,7 +1021,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         form.classList.add('was-validated');
                     }, false);
                 });
-            }, false);
+            });
         })();
 
         // === MANEJO DE TEMA CLARO/OSCURO ===
@@ -1081,44 +1060,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         type: 'column',
                         target: 'tr'
                     }
-                },
-                language: {
-                    url: '',
-                    sProcessing: "Procesando...",
-                    sLengthMenu: "Mostrar _MENU_ registros",
-                    sZeroRecords: "No se encontraron resultados",
-                    sEmptyTable: "Ningún dato disponible en esta tabla",
-                    sInfo: "Mostrando registros del _START_ al _END_ de un total de _TOTAL_",
-                    sInfoEmpty: "Mostrando registros del 0 al 0 de un total de 0",
-                    sInfoFiltered: "(filtrado de un total de _MAX_ registros)",
-                    sInfoPostFix: "",
-                    sSearch: "Buscar:",
-                    sUrl: "",
-                    sInfoThousands: ",",
-                    sLoadingRecords: "Cargando...",
-                    oPaginate: {
-                        sFirst: "Primero",
-                        sLast: "Último",
-                        sNext: "Siguiente",
-                        sPrevious: "Anterior"
-                    },
-                    oAria: {
-                        sSortAscending: ": Activar para ordenar la columna de manera ascendente",
-                        sSortDescending: ": Activar para ordenar la columna de manera descendente"
-                    },
-                    select: {
-                        rows: {
-                            _: "%d filas seleccionadas",
-                            0: "Haga clic en una fila para seleccionarla",
-                            1: "1 fila seleccionada"
-                        }
-                    }
-                },
-                order: [[0, 'desc']],
-                pageLength: 10,
-                lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
-                data: null,
-                columns: null
+                }
             });
         }
     });
@@ -1208,7 +1150,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 </script>
 
-    <!-- Scripts -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.datatables.net/2.1.8/js/dataTables.js"></script>
     <script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap4.js"></script>
@@ -1372,7 +1313,7 @@ document.addEventListener('DOMContentLoaded', () => {
             },
             // ✅ Idioma en línea (evita errores de carga de archivo externo)
             language: {
-                url: '', // ← Dejar vacío para no intentar cargar archivo externo
+                url: '', 
                 sProcessing: "Procesando...",
                 sLengthMenu: "Mostrar _MENU_ registros",
                 sZeroRecords: "No se encontraron resultados",
@@ -1458,7 +1399,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         form.classList.add('was-validated');
                     }, false);
                 });
-            }, false);
+            });
         })();
 
         // Manejo del tema claro/oscuro
