@@ -1,5 +1,5 @@
 <?php
-require_once "./db.php";
+require_once "../db.php";
 
 if (isset($_GET['nun_ayuda'])) {
     $id_planilla = $conn->real_escape_string($_GET['nun_ayuda']); 

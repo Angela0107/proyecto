@@ -10,7 +10,7 @@ if (!isset($_SESSION['puntoctaes'])) {
     $_SESSION['puntoctaes'] = [];
 }
 
-require_once "./db.php";
+require_once "../db.php";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     

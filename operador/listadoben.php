@@ -1,6 +1,6 @@
  
  <?php
-require_once "./db.php";
+require_once "../db.php";
 
 // Función para crear beneficiario
 function crearBeneficiario($nac_ben, $ced_ben, $nom_ben, $ape_ben, $dir_ben, $cod_par, $cor_ben, $tlf_ben, $sec_ben)

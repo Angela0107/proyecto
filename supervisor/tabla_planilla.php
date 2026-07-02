@@ -1,5 +1,5 @@
 <?php
-require_once "./db.php";
+require_once "../db.php";
 
 $sql = "SELECT t.des_tpo, s.numsol, s.fechasol, s.ced_ben, s.descripcion, s.nom_ben, s.idbenefi
         FROM beneficiario b 

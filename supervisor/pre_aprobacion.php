@@ -25,7 +25,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 }
 
-include '../db.php';
+include '.../db.php';
 
 
 $sql_numsol = "SELECT * FROM puntocta WHERE ids_pta IN ($puntoctaes) AND fec_pag IS NULL "; // Obtener el último número de solicitud
