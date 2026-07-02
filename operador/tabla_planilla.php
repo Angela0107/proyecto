@@ -1,15 +1,5 @@
 <?php
-$servername = getenv("DB_HOST")     ?: "localhost";
-$username   = getenv("DB_USER")     ?: "root";
-$password   = getenv("DB_PASSWORD") ?: "";
-$dbname     = getenv("DB_NAME")     ?: "diseño_ayudas";
-$port       = getenv("DB_PORT")     ?: "3306";
-
-$conn = new mysqli($servername, $username, $password, $dbname, $port);
-
-if ($conn->connect_error) {
-    die("Conexión fallida: " . $conn->connect_error);
-}
+require_once "./db.php";
 
 $sql = "SELECT t.des_tpo, s.numsol, s.fechasol, s.ced_ben, s.descripcion, s.nom_ben, s.idbenefi
         FROM beneficiario b 

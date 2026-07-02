@@ -1,15 +1,5 @@
 <?php
-$servername = getenv("DB_HOST")     ?: "localhost";
-$username   = getenv("DB_USER")     ?: "root";
-$password   = getenv("DB_PASSWORD") ?: "";
-$dbname     = getenv("DB_NAME")     ?: "diseño_ayudas";
-$port       = getenv("DB_PORT")     ?: "3306";
-
-$conn = new mysqli($servername, $username, $password, $dbname, $port);
-
-if ($conn->connect_error) {
-    die("Conexión fallida: " . $conn->connect_error);
-}
+require_once "./db.php";
 
 $sql = "SELECT s.`numsol`, s.idbenefi, s.ced_ben, s.`descripcion`, s.`codsolicitud`, s.`fechasol`, s.`observa`, s.`fechaent`,
 s.`fecpago`,IF(s.`estatus`= 0, 'EN REVISIÓN', IF(s.`estatus`= 1, 'PUNTO DE CUENTA',IF(s.`estatus`= 4, 'ANULADO',IF(s.`estatus`= 5, 'RECHAZADO', IF(s.`estatus`= 3, 'APROBADOS', NULL))))) AS estatus,

@@ -1,15 +1,5 @@
 <?php
-$servername = getenv("DB_HOST")     ?: "localhost";
-$username   = getenv("DB_USER")     ?: "root";
-$password   = getenv("DB_PASSWORD") ?: "";
-$dbname     = getenv("DB_NAME")     ?: "diseño_ayudas";
-$port       = getenv("DB_PORT")     ?: "3306";
-
-$conn = new mysqli($servername, $username, $password, $dbname, $port);
-
-if ($conn->connect_error) {
-    die("Conexión fallida: " . $conn->connect_error);
-}
+require_once "./db.php";
 
 // Función para crear beneficiario
 function crearBeneficiario($nac_ben, $ced_ben, $nom_ben, $ape_ben, $dir_ben, $cod_par, $cor_ben, $tlf_ben, $sec_ben)
