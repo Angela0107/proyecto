@@ -26,7 +26,11 @@ $contr_usu = $_SESSION['contr_usu'] ?? '';
 $id_usu = $_SESSION['id_usu'];
 $nom_usu = $_SESSION['nom_usu'] ?? '';
 
-include '../db.php';
+// Estandarizado con la extensión .php fija de la raíz
+require_once '../db.php';
+
+// Fuerza a MySQL a relajar el modo estricto en esta sesión
+$conn->query("SET SESSION sql_mode=''");
 
 // ================= ENDPOINT AJAX PARA SECTORES =================
 if (isset($_GET['action']) && $_GET['action'] === 'getsec_benes' && isset($_GET['cod_par'])) {
@@ -52,8 +56,6 @@ $beneficiario = null;
 $ced_ben = '';
 $tiposolicitud = [];
 $cod_pars = []; 
-
-
 
 $sql = "SELECT cod_tip, des_tpo FROM tiposolicitud";
 $result = $conn->query($sql);
@@ -92,6 +94,7 @@ INNER JOIN sector s ON b.sec_ben = s.ids_sec WHERE ced_ben = ?";
         $ced_ben_requi = $_POST['ced_ben_requi'] ?? '2';
         $nac_ben = $_POST['nac_ben'] ?? '';
         $nom_ben = $_POST['nom_ben'] ?? $_POST['nombre'] ?? ''; 
+        $ape_ben = $_POST['ape_ben'] ?? ''; // CORRECCIÓN 1: Capturar el apellido del POST
         $dir_ben = $_POST['dir_ben'] ?? '';
         $cod_par = $_POST['cod_par'] ?? 6; 
         $cor_ben = $_POST['cor_ben'] ?? '';
@@ -138,10 +141,12 @@ INNER JOIN sector s ON b.sec_ben = s.ids_sec WHERE ced_ben = ?";
         if ($result->num_rows > 0) {
             $beneficiario_id = $result->fetch_assoc()['ids_bene'];
         } else {
-            $sql_ins = "INSERT INTO beneficiario (nac_ben, ced_ben, nom_ben, dir_ben, cod_par, cor_ben, tlf_ben, sec_ben) 
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+            // CORRECCIÓN 2: Añadir ape_ben a las columnas y los marcadores de posición del INSERT
+            $sql_ins = "INSERT INTO beneficiario (nac_ben, ced_ben, nom_ben, ape_ben, dir_ben, cod_par, cor_ben, tlf_ben, sec_ben) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt_ins = $conn->prepare($sql_ins);
-            $stmt_ins->bind_param("ssssssss", $nac_ben, $ced_ben, $nom_ben, $dir_ben, $cod_par, $cor_ben, $tlf_ben, $sec_ben);
+            // CORRECCIÓN 3: Añadir la variable $ape_ben con su respectivo tipo "s" en el bind_param
+            $stmt_ins->bind_param("sssssssss", $nac_ben, $ced_ben, $nom_ben, $ape_ben, $dir_ben, $cod_par, $cor_ben, $tlf_ben, $sec_ben);
             if (!$stmt_ins->execute()) {
                 $mensaje = "Error al insertar beneficiario: " . $stmt_ins->error;
                 goto end;
@@ -485,7 +490,6 @@ include 'nav/index2.php';
         <br>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // 1. CÉDULA: Solo números, no puede comenzar con 0 ni ser solo 0
         const cedInput = document.getElementById('ced_ben');
         if (cedInput) {
             cedInput.addEventListener('input', function() {
@@ -522,7 +526,6 @@ include 'nav/index2.php';
             });
         }
 
-        // 2. NOMBRES Y APELLIDOS: Solo letras + espacios → Mayúsculas
         const letterRegex = /[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g;
         ['nom_ben', 'ape_ben'].forEach(id => {
             const input = document.getElementById(id);
@@ -534,7 +537,6 @@ include 'nav/index2.php';
             }
         });
 
-        // 3. TELÉFONO: Solo números + validación visual de prefijo
         const tlfInput = document.getElementById('tlf_ben');
         if (tlfInput) {
             tlfInput.addEventListener('input', function() {
@@ -597,8 +599,7 @@ include 'nav/index2.php';
                     </div>
                        <div class="col-md-6">
                     <p>Apellido: <input type="text" name="ape_ben" class="datos" value="<?php echo htmlspecialchars($beneficiario['ape_ben']); ?>" readonly required></p>
-                   </div></div>
-                    <br>
+                    </div></div>
                     <div class="form-row">
                         <div class="col-md-6">
                             <p>Dirección: <input type="text" name="dir_ben" value="<?php echo htmlspecialchars($beneficiario['dir_ben']); ?>" readonly required></p>
@@ -737,8 +738,6 @@ include 'nav/index2.php';
                     </div>
                 </div>
 
-
-
                 
                 <label for="descripcion">Descripción:</label>
                 <textarea name="descripcion" rows="3" required></textarea>
@@ -874,7 +873,7 @@ include 'nav/index2.php';
                         </label>
                         <select name="presu_ban" class="form-control" required>
                             <option value="2" <?php echo (isset($_POST['presu_ban']) && $_POST['presu_ban'] === '2') ? 'selected' : ''; ?>>NO</option>
-                            <option value="1" <?php echo (isset($_POST['presu_ban']) && $_POST['presu_ban'] === '1') ? 'selected' : ''; ?>>SI</option>
+                            <option value="1" <?php echo (issetPOST['presu_ban'] && $_POST['presu_ban'] === '1') ? 'selected' : ''; ?>>SI</option>
                         </select>
                     </div>
                 </div>
@@ -950,10 +949,8 @@ include 'nav/index2.php';
     </div>
     <script>
 document.addEventListener("DOMContentLoaded", function() {
-    // Seleccionar AMBOS formularios de agregar solicitud
     const formulariosAgregar = document.querySelectorAll('#formAgregar, #formAgregarNuevo');
 
-    // Campos que OBLIGATORIAMENTE deben tener valor "1" (SI)
     const camposObligatoriosSi = [
         'ced_ben_requi', 
         'rif', 
@@ -973,7 +970,6 @@ document.addEventListener("DOMContentLoaded", function() {
             let primerCampoConError = null;
             let camposFaltantes = [];
 
-            // Validar cada campo obligatorio
             camposObligatoriosSi.forEach(function(nombreCampo) {
                 const select = formulario.querySelector(`select[name="${nombreCampo}"]`);
                 
@@ -983,7 +979,6 @@ document.addEventListener("DOMContentLoaded", function() {
                         select.style.borderColor = "red";
                         select.style.backgroundColor = "#ffe6e6";
                         
-                        // Obtener el texto del label asociado
                         const label = select.previousElementSibling;
                         const textoRequisito = label ? label.textContent.trim() : nombreCampo;
                         camposFaltantes.push(textoRequisito);
@@ -998,7 +993,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 }
             });
 
-            // Si hay errores, detener envío
             if (!todoCorrecto) {
                 evento.preventDefault();
                 
@@ -1025,12 +1019,10 @@ document.addEventListener("DOMContentLoaded", function() {
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        // Aplicar tema guardado al cargar
         const savedTheme = localStorage.getItem('theme') || 'light';
         document.body.className = savedTheme + '-theme';
         updateToggleButton(savedTheme);
 
-        // Cambiar tema
         document.getElementById('themeToggle').addEventListener('click', function() {
             const isDark = document.body.classList.contains('dark-theme');
             const newTheme = isDark ? 'light' : 'dark';
@@ -1087,7 +1079,6 @@ document.addEventListener("DOMContentLoaded", function() {
                     cargarSectores(this.value);
                 });
                 
-                // Cargar sectores si hay parroquia preseleccionada (POST)
                 const parroquiaSeleccionada = <?php echo json_encode($_POST['cod_par'] ?? ''); ?>;
                 if (parroquiaSeleccionada) {
                     cargarSectores(parroquiaSeleccionada);
@@ -1102,7 +1093,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 }
             }
             
-            // Validación: sector requerido si hay parroquia
             const form = document.querySelector('form[method="post"]');
             if (form && sectorSelect) {
                 form.addEventListener('submit', function(e) {
@@ -1116,7 +1106,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 });
             }
         });
-        // ===========================================================
     </script>
 </body>
 </html>

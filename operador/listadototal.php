@@ -171,7 +171,6 @@ $result_combined = $conn->query($sql);
 
             <h2>Listado de ayudas</h2>
 
-
             <table id="ayudasTable" class="table table-striped table-bordered dt-responsive nowrap" style="width:100%">
                 <thead>
                     <tr>
@@ -204,28 +203,27 @@ $result_combined = $conn->query($sql);
                             }
 
                             echo "<tr>
-                                <td>" . htmlspecialchars($row["numsol"]) . "</td>
-                                <td>" . htmlspecialchars($row["fechasol"]) . "</td>
-                                <td>" . htmlspecialchars($row["nom_ben"]) . "</td>
-                                <td>" . htmlspecialchars($row["ced_ben"]) . "</td>
-                                <td>" . htmlspecialchars($row["descripcion"]) . "</td>
-                                <td>" . htmlspecialchars($row["des_tpo"]) . "</td>
-                                <td style='background-color: {$backgroundColor};'>" . htmlspecialchars($row["estatus"]) . "</td>
-                                <td>" . htmlspecialchars($row["ptocuenta"]) . "</td>
+                                <td>" . htmlspecialchars($row["numsol"] ?? '') . "</td>
+                                <td>" . htmlspecialchars($row["fechasol"] ?? '') . "</td>
+                                <td>" . htmlspecialchars($row["nom_ben"] ?? '') . "</td>
+                                <td>" . htmlspecialchars($row["ced_ben"] ?? '') . "</td>
+                                <td>" . htmlspecialchars($row["descripcion"] ?? '') . "</td>
+                                <td>" . htmlspecialchars($row["des_tpo"] ?? '') . "</td>
+                                <td style='background-color: {$backgroundColor};'>" . htmlspecialchars($row["estatus"] ?? '') . "</td>
+                                <td>" . htmlspecialchars($row["ptocuenta"] ?? '') . "</td>
                             </tr>";
                         }
                     } else {
                       echo "<tr>
-                                            <td>No hay ayudas finalizadas.</td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-                                           <td></td>
-                                            <td></td>
-                                        
-                                        </tr>";
+                                <td>No hay ayudas finalizadas.</td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>";
                     }
                     ?>
                 </tbody>
