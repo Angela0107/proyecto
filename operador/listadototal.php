@@ -1,5 +1,5 @@
 <?php
-require_once "../db.php";
+require_once "../db.php.php";
 
 $sql = "SELECT s.`numsol`, s.idbenefi, s.ced_ben, s.`descripcion`, s.`codsolicitud`, s.`fechasol`, s.`observa`, s.`fechaent`,
 s.`fecpago`,IF(s.`estatus`= 0, 'EN REVISIÓN', IF(s.`estatus`= 1, 'PUNTO DE CUENTA',IF(s.`estatus`= 4, 'ANULADO',IF(s.`estatus`= 5, 'RECHAZADO', IF(s.`estatus`= 3, 'APROBADOS', NULL))))) AS estatus,

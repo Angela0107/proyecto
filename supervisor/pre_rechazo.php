@@ -23,7 +23,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 }
 
-include '../db';
+include '../db.php';
 
  $sql_update_numsol = "UPDATE puntocta SET fec_pag = '$fechanueva' , usuario = '$id_usu' WHERE ids_pta IN ($puntoctaes)";
  if ($conn->query($sql_update_numsol) === TRUE) {

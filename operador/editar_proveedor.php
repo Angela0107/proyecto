@@ -1,5 +1,5 @@
 <?php
-require_once "../db.php";
+require_once "../db.php.php";
 
 function crearProveedor($nacio, $cedprov, $nomprov)
 {

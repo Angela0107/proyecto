@@ -1,5 +1,5 @@
 <?php
-require_once "../db.php";
+require_once "../db.php.php";
 
 // Limpieza de variables para evitar fallos por comillas o caracteres extraños
 $nac_prv   = mysqli_real_escape_string($conn, $_POST['nac_prv']);

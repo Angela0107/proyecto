@@ -1,5 +1,5 @@
 <?php
-include '../db';
+include '../db.php';
 
 $cedprov = isset($_GET['cedprov']) ? intval($_GET['cedprov']) : 0;
 
