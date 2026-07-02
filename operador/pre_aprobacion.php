@@ -45,7 +45,7 @@ if (empty($ids_array)) {
     exit;
 }
 
-include '.../db.php';
+include '../db';
 
 if ($conn->connect_error) {
     error_log("Error de conexión: " . $conn->connect_error);

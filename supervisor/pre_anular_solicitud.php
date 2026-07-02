@@ -20,7 +20,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 }
 
-include '.../db.php';
+include '../db';
 
  // Actualizar la tabla numsoli para incrementar el número de solicitud
  $sql_update_numsol = "UPDATE `solicitud` SET `observa`='$monto' , `estatus`='4' WHERE idsolicitud IN ($solicitudes)"; // Incrementar numsol

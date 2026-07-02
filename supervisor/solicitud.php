@@ -26,7 +26,7 @@ $contr_usu = $_SESSION['contr_usu'] ?? '';
 $id_usu = $_SESSION['id_usu'];
 $nom_usu = $_SESSION['nom_usu'] ?? '';
 
-include '.../db.php';
+include '../db';
 
 // ================= ENDPOINT AJAX PARA SECTORES =================
 if (isset($_GET['action']) && $_GET['action'] === 'getsec_benes' && isset($_GET['cod_par'])) {
