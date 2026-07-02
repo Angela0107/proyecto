@@ -11,12 +11,13 @@ if ($conn->connect_error) {
     die("Conexión fallida: " . $conn->connect_error);
 }
 
-$nac_prv = $_POST['nac_prv'];
-$ced_prv = $_POST['ced_prv'];
-$nom_prv = strtoupper(trim($_POST['nom_prv'])); 
-$codban = $_POST['cod_ban'];
-$nrocuenta = $_POST['nro_cta'];
-$tipcuenta = $_POST['tip_cta'];
+// Limpieza de variables para evitar fallos por comillas o caracteres extraños
+$nac_prv   = mysqli_real_escape_string($conn, $_POST['nac_prv']);
+$ced_prv   = mysqli_real_escape_string($conn, $_POST['ced_prv']);
+$nom_prv   = strtoupper(trim(mysqli_real_escape_string($conn, $_POST['nom_prv']))); 
+$codban    = mysqli_real_escape_string($conn, $_POST['cod_ban']);
+$nrocuenta = mysqli_real_escape_string($conn, $_POST['nro_cta']);
+$tipcuenta = mysqli_real_escape_string($conn, $_POST['tip_cta']);
 
 $sql_proveedor = "INSERT INTO proveedor (`nac_prv`, `ced_prv`, `nom_prv`) VALUES ('$nac_prv', '$ced_prv', '$nom_prv')";
 
@@ -26,7 +27,8 @@ if ($conn->query($sql_proveedor) === TRUE) {
     $sql_cuenta = "INSERT INTO provcuenta (`cod_ban`, `nro_cta`, `tip_cta`, `nac_prv`, `ced_prv`) VALUES ('$codban', '$nrocuenta', '$tipcuenta', '$nac_prv', '$ced_prv')";
 
     if ($conn->query($sql_cuenta) === TRUE) {
-        header("Location: aprobar.php");
+        // Redirigir de vuelta al panel de proveedores de forma exitosa
+        header("Location: proveedor.php");
         exit();
     } else {
         echo "Error al registrar la cuenta: " . $conn->error;

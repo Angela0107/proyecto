@@ -1,22 +1,32 @@
 <?php
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
-include 'nav/index.php';
 
-if (!isset($_SESSION['solicitudes'])) {
-    $_SESSION['solicitudes'] = [];
-}
-
+// 1. Inicializar las credenciales globales dinámicas de Render / Aiven
 $servername = getenv("DB_HOST")     ?: "localhost";
 $username   = getenv("DB_USER")     ?: "root";
 $password   = getenv("DB_PASSWORD") ?: "";
 $dbname     = getenv("DB_NAME")     ?: "diseño_ayudas";
 $port       = getenv("DB_PORT")     ?: "3306";
 
+// 2. Crear conexión MySQLi (Requerida para la primera parte del script)
 $conn = new mysqli($servername, $username, $password, $dbname, $port);
-
 if ($conn->connect_error) {
-    die("Conexión fallida: " . $conn->connect_error);
+    die("Conexión MySQLi fallida: " . $conn->connect_error);
+}
+
+// 3. Crear conexión PDO (Requerida para la segunda parte del script)
+try {
+    $conexion = new PDO("mysql:host=$servername;port=$port;dbname=$dbname;charset=utf8mb4", $username, $password);
+    $conexion->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    die("Conexión PDO fallida: " . $e->getMessage());
+}
+
+include 'nav/index.php';
+
+if (!isset($_SESSION['solicitudes'])) {
+    $_SESSION['solicitudes'] = [];
 }
 
 $results = [];
@@ -98,10 +108,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 }
 
+// Cerrar conexión MySQLi ya que no se usará más abajo
 $conn->close();
 
-include '../conexion2.php';
-
+// Consultas usando la conexión PDO ($conexion)
 $proveedores = $conexion->query("SELECT DISTINCT ced_prv, nac_prv, id_prov, nom_prv FROM proveedor;")->fetchAll(PDO::FETCH_ASSOC);
 $provcuentas = [];
 
@@ -306,31 +316,21 @@ if (isset($_POST['ced_prv'])) {
 <script>
 document.getElementById('monto').addEventListener('input', function(e) {
     let value = e.target.value;
-
-    // 1️⃣ Eliminar cualquier carácter que no sea número o punto
     value = value.replace(/[^\d.]/g, '');
-
-    // 2️⃣ Permitir solo UN punto decimal
     const parts = value.split('.');
     if (parts.length > 2) {
         value = parts[0] + '.' + parts.slice(1).join('').replace(/\./g, '');
     }
-
-    // 3️⃣ Limitar a máximo 10 dígitos (ignorando el punto)
     const soloNumeros = value.replace(/\./g, '');
     if (soloNumeros.length > 10) {
         const puntoIndex = value.indexOf('.');
         if (puntoIndex === -1) {
-            // Sin punto: cortar a 10 caracteres
             value = value.slice(0, 10);
         } else {
-            // Con punto: mantener el punto y permitir máximo (10 - dígitos antes del punto) decimales
             const maxDecimales = 10 - puntoIndex;
             value = value.slice(0, puntoIndex + 1 + maxDecimales);
         }
     }
-
-    // ✅ Actualizar el valor del input
     e.target.value = value;
 });
 </script>
@@ -342,7 +342,7 @@ document.getElementById('monto').addEventListener('input', function(e) {
             </div>
 
             <div class="form-row">
-                <label for="tipoSeleccion">Seleccione Tipo:</label>
+                <label for="tipoSelection">Seleccione Tipo:</label>
                 <select id="tipoSeleccion" required>
                     <option value="">Seleccione...</option>
                     <option value="proveedor">Proveedor</option>
@@ -366,7 +366,6 @@ document.getElementById('monto').addEventListener('input', function(e) {
                             <option value="">Seleccione una provcuenta</option>
                             <?php if (!empty($provcuentas)): ?>
                                 <?php foreach ($provcuentas as $provcuenta): ?>
-                                    <!-- ✅ Muestra número y tipo de cuenta -->
                                     <option value="<?= $provcuenta['ids_prc'] ?>">
                                         <?= htmlspecialchars($provcuenta['nro_pta'] ?? 'N/A') ?> - <?= htmlspecialchars($provcuenta['tip_cta'] ?? 'N/A') ?>
                                     </option>
@@ -444,7 +443,6 @@ document.getElementById('monto').addEventListener('input', function(e) {
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        // 🔹 Gestión de tema
         const savedTheme = localStorage.getItem('theme') || 'light';
         document.body.className = savedTheme + '-theme';
         updateToggleButton(savedTheme);
@@ -464,7 +462,6 @@ document.getElementById('monto').addEventListener('input', function(e) {
             const anio = document.getElementById('anio');
             const monto = document.getElementById('monto');
 
-            // 🔹 Filtro genérico mejorado
             function numericFilter(input, maxLength, options = {}) {
                 const { allowLeadingZero = false, minRange = null, maxRange = null } = options;
                 input.addEventListener('input', function() {
@@ -494,11 +491,10 @@ document.getElementById('monto').addEventListener('input', function(e) {
             numericFilter(numsol, 5, { allowLeadingZero: false });
             numericFilter(anio, 4, { minRange: 1561, maxRange: 2056 });
 
-            // 🔹 VALIDACIÓN MONTO: Sin letras, sin espacios, solo números y un punto decimal
             monto.addEventListener('input', function() {
-                this.value = this.value.replace(/[^0-9.,]/g, ''); // Elimina todo excepto dígitos, punto y coma
-                this.value = this.value.replace(/\s/g, '');       // Elimina espacios explícitamente
-                this.value = this.value.replace(',', '.');        // Normaliza coma a punto
+                this.value = this.value.replace(/[^0-9.,]/g, '');
+                this.value = this.value.replace(/\s/g, '');       
+                this.value = this.value.replace(',', '.');        
                 const parts = this.value.split('.');
                 if (parts.length > 2) {
                     this.value = parts[0] + '.' + parts.slice(1).join('');
@@ -508,8 +504,8 @@ document.getElementById('monto').addEventListener('input', function(e) {
                 const allowed = ['Backspace','Delete','Tab','ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End','.'];
                 if (allowed.includes(e.key) || (e.ctrlKey && ['a','c','v','x','z'].includes(e.key.toLowerCase()))) return;
                 if ((e.key < '0' || e.key > '9') && e.key !== '.') e.preventDefault();
-                if (e.key === '.' && this.value.includes('.')) e.preventDefault(); // Solo un punto
-                if (e.key === ' ' || e.code === 'Space') e.preventDefault(); // Bloquea espacio
+                if (e.key === '.' && this.value.includes('.')) e.preventDefault();
+                if (e.key === ' ' || e.code === 'Space') e.preventDefault();
             });
             monto.addEventListener('paste', function(e) {
                 e.preventDefault();
@@ -518,7 +514,6 @@ document.getElementById('monto').addEventListener('input', function(e) {
                 else this.value = pasted;
             });
 
-            // ✅ Validación al enviar formulario
             document.getElementById('consultaForm').addEventListener('submit', function(e) {
                 if (!/^[1-9][0-9]{0,4}$/.test(numsol.value.trim())) {
                     e.preventDefault(); showError('Error técnico: El Número de Solicitud debe contener entre 1 y 5 dígitos numéricos, sin ceros a la izquierda.'); numsol.focus(); return false;
@@ -542,7 +537,6 @@ document.getElementById('monto').addEventListener('input', function(e) {
                 setTimeout(() => { errorDiv.style.opacity = '0'; setTimeout(() => errorDiv.remove(), 300); }, 5000);
             }
 
-            // 🔹 Lógica formularios dinámicos
             const tipoSeleccion = document.getElementById('tipoSeleccion');
             const proveedorForm = document.getElementById('proveedorForm');
             const cuentaPropiaForm = document.getElementById('cuentaPropiaForm');
@@ -571,7 +565,6 @@ document.getElementById('monto').addEventListener('input', function(e) {
                 const el = document.getElementById(id); if (el) el.addEventListener('input', validateForm);
             });
 
-            // 🔹 Carga dinámica de provcuentas (AHORA MUESTRA NRO Y TIPO)
             const proveedorSelect = document.getElementById('proveedor');
             if (proveedorSelect) {
                 proveedorSelect.addEventListener('change', function() {
