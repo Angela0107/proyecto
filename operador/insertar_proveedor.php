@@ -9,6 +9,10 @@ $codban    = mysqli_real_escape_string($conn, $_POST['cod_ban']);
 $nrocuenta = mysqli_real_escape_string($conn, $_POST['nro_cta']);
 $tipcuenta = mysqli_real_escape_string($conn, $_POST['tip_cta']);
 
+// ✅ FIX: Force MySQL to relax strict mode for this file's session.
+// This prevents the fatal exception and replicates your local XAMPP environment.
+$conn->query("SET SESSION sql_mode=''");
+
 $sql_proveedor = "INSERT INTO proveedor (`nac_prv`, `ced_prv`, `nom_prv`) VALUES ('$nac_prv', '$ced_prv', '$nom_prv')";
 
 if ($conn->query($sql_proveedor) === TRUE) {
