@@ -78,7 +78,7 @@ $monto_formateado = number_format($monto, 2, ',', '.');
 
 <?php
 // Conexión a la base de datos
-require_once "../db.php.php";// Verificar conexión
+require_once "../db.php";// Verificar conexión
 if ($conn->connect_error) {
     die("Conexión fallida: " . $conn->connect_error);
 }

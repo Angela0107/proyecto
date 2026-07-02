@@ -1,5 +1,5 @@
 <?php
-require_once "../db.php.php";
+require_once "../db.php";
 
 $nac_prv = $_POST['nac_prv'];
 $ced_prv = $_POST['ced_prv'];

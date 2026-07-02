@@ -1,5 +1,5 @@
 <?php
-require_once "../db.php.php";if ($conn->connect_error) {
+require_once "../db.php";if ($conn->connect_error) {
     http_response_code(500);
     die("Error de conexión: " . htmlspecialchars($conn->connect_error));
 }

@@ -6,7 +6,7 @@ if (!isset($_SESSION['solicitudes'])) {
     $_SESSION['solicitudes'] = []; 
 }
 
-require_once "../db.php.php";
+require_once "../db.php";
 
 $results = [];
 $solicitudes_string = '';
