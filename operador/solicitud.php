@@ -210,273 +210,269 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solicitud de Ayuda</title>
     <style>
+        /* Contenedor principal adaptable */
         .container1 {
-            max-width: 2000px;
+            width: 100%;
             margin: 0 auto;
             padding: 20px;
             background-color: #fff;
             border-radius: 5px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            margin-top: 109px;
-            width: 1120px;
-            margin-left: 17%;
             height: auto;
         }
+        
+        /* Diseño para Computadoras (Acomoda la barra lateral) */
+        @media (min-width: 769px) {
+            .container1 {
+                max-width: 1200px;
+                width: 80%;
+                margin-left: 18%;
+                margin-top: 100px;
+            }
+        }
+
+        /* Diseño para Teléfonos Móviles */
+        @media (max-width: 768px) {
+            .container1 {
+                width: 95%;
+                margin-top: 80px;
+                padding: 15px;
+                margin-left: auto;
+                margin-right: auto;
+            }
+            .col-md-6 {
+                flex: 0 0 100% !important;
+                max-width: 100% !important;
+                padding: 0 !important;
+            }
+            #themeToggle {
+                position: relative !important;
+                display: block;
+                width: 100%;
+                margin-top: 10px !important;
+                right: 0 !important;
+            }
+        }
+
         .container2 {
             height: auto;
-            width: 1000px;
+            width: 100%;
         }
+
         label[for="tipo_ayuda"] {
             font-weight: bold;
             font-size: 18px;
-            margin-top: 0px;
-            margin-left: 0px;
         }
+
+        /* Campos que ocupan el 100% de su contenedor padre */
         input[type="text"],
         input[type="date"],
-        input[type="number"] {
-            width: 100%;
-            padding: 8px;
+        input[type="number"],
+        input[type="tel"],
+        select, textarea, .form-control, .datos {
+            width: 100% !important;
+            padding: 10px;
             margin-top: 5px;
+            margin-left: 0 !important;
             border: 1px solid #ccc;
             border-radius: 4px;
             box-sizing: border-box;
         }
+
         input[type="radio"] {
             margin-left: 10px;
             margin-right: 5px;
         }
+
         .text-small {
             font-size: 0.8em;
         }
-        select, textarea {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-        input[type="submit"] {
-            background-color: #5cb85c;
+
+        input[type="submit"], .btn, .buscar-btn {
+            background-color: #007bff;
             color: white;
             padding: 10px 15px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            margin-right: 10px;
+            margin-top: 10px;
+            transition: background-color 0.3s;
         }
-        input[type="submit"]:hover {
-            background-color: #4cae4c;
+
+        input[type="submit"]:hover, .btn:hover, .buscar-btn:hover {
+            background-color: #0056b3;
         }
+
         .form-row {
             display: flex;
             flex-wrap: wrap;
             margin-bottom: 15px;
         }
+
         .col-md-6 {
             flex: 0 0 50%;
             max-width: 50%;
             padding: 0 10px;
             box-sizing: border-box;
         }
-        label {
+
+        /* Reseteo de márgenes rotos */
+        label, .form-label, .form-label-1 {
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
-            margin-left: 200px;
+            margin-left: 0 !important; /* Corrige el margin-left: 200px */
+            color: #333;
+            font-size: 14px;
         }
+
         .checkbox {
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
-            margin-left: 0;
-            margin-top: 0px;
+            margin-left: 0 !important;
             color: #333;
             font-size: 14px;
         }
-        .form-control {
-            margin-left: 0;
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-        .checkbox.form-control {
-            width: 318.66666px;
-            margin-left: 216px;
-        }
+
         .tipo-ayuda-container {
             margin-top: 10px;
             margin-bottom: 20px;
         }
+
         .tipo-ayuda-option {
             display: flex;
             align-items: center;
             margin-bottom: 8px;
         }
+
         .tipo-ayuda-option input[type="radio"] {
             margin-right: 10px;
             cursor: pointer;
             margin-left: 0;
         }
+
         .tipo-ayuda-option label {
             font-weight: bold;
             cursor: pointer;
             color: #333;
             font-size: 14px;
-            margin: 0;
+            margin: 0 !important;
         }
+
         .tipo-ayuda-option:hover {
             background-color: #f0f0f0;
             border-radius: 4px;
         }
-        .form-label, .form-label-1 {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            margin-left: 0;
-            color: #333;
-            font-size: 14px;
-        }
+
         input[readonly] {
             background-color: #f9f9f9;
             cursor: not-allowed;
         }
-        .datos {
-            margin-left: 10px;
-            width: 980.66666px;
-            padding: 0;
-            border: 1px solid #ccc;
-        }
+
         .fecha-label {
             font-size: 16px;
             font-weight: bold;
             margin-bottom: 8px;
             color: #333;
-            margin-right: 10px;
         }
-        .fecha-input {
-            padding: 10px;
-            font-size: 16px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            flex: 1;
-            margin-right: 10px;
-        }
+
         .input-group {
             display: flex;
             align-items: center;
             margin-top: 8px;
+            flex-wrap: wrap;
         }
-        .btn {
-            padding: 10px 15px;
-            font-size: 16px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .buscar-btn {
-            background-color: #007bff;
-            color: white;
-        }
-        .buscar-btn:hover {
-            background-color: #0056b3;
-        }
+
         .error {
             color: #d9534f;
             font-weight: bold;
         }
 
-        
+        /* ===== Tema claro / oscuro ===== */
         body.light-theme {
-        background-color: #f5f7fa;
-        color: #333;
-    }
+            background-color: #f5f7fa;
+            color: #333;
+        }
 
-    /* ===== Tema oscuro ===== */
-    body.dark-theme {
-        background-color: #121212;
-        color: #e0e0e0;
-    }
+        body.dark-theme {
+            background-color: #121212;
+            color: #e0e0e0;
+        }
 
-    /* Contenedores principales */
-    body.dark-theme .container1,
-    body.dark-theme .container2 {
-        background-color: #1e1e1e !important;
-        color: #e0e0e0 !important;
-        border-color: #444 !important;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4) !important;
-    }
+        body.dark-theme .container1,
+        body.dark-theme .container2 {
+            background-color: #1e1e1e !important;
+            color: #e0e0e0 !important;
+            border-color: #444 !important;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4) !important;
+        }
 
-    /* Inputs, selects, textareas */
-    body.dark-theme input[type="text"],
-    body.dark-theme input[type="date"],
-    body.dark-theme input[type="number"],
-    body.dark-theme input[type="tel"],
-    body.dark-theme select,
-    body.dark-theme textarea,
-    body.dark-theme .form-control {
-        background-color: #2d2d2d !important;
-        color: #e0e0e0 !important;
-        border-color: #444 !important;
-    }
+        body.dark-theme input[type="text"],
+        body.dark-theme input[type="date"],
+        body.dark-theme input[type="number"],
+        body.dark-theme input[type="tel"],
+        body.dark-theme select,
+        body.dark-theme textarea,
+        body.dark-theme .form-control,
+        body.dark-theme .datos {
+            background-color: #2d2d2d !important;
+            color: #e0e0e0 !important;
+            border-color: #444 !important;
+        }
 
-    /* Placeholder en modo oscuro */
-    body.dark-theme input::placeholder,
-    body.dark-theme textarea::placeholder {
-        color: #aaa !important;
-    }
+        body.dark-theme input::placeholder,
+        body.dark-theme textarea::placeholder {
+            color: #aaa !important;
+        }
 
-    /* Labels y texto */
-    body.dark-theme label,
-    body.dark-theme .form-label,
-    body.dark-theme .form-label-1,
-    body.dark-theme .checkbox,
-    body.dark-theme h2,
-    body.dark-theme h3 {
-        color: #e0e0e0 !important;
-    }
+        body.dark-theme label,
+        body.dark-theme .form-label,
+        body.dark-theme .form-label-1,
+        body.dark-theme .checkbox,
+        body.dark-theme .fecha-label,
+        body.dark-theme h2,
+        body.dark-theme h3 {
+            color: #e0e0e0 !important;
+        }
 
-    /* Botones */
-    body.dark-theme .btn,
-    body.dark-theme .buscar-btn {
-        background-color: #007bff !important;
-        color: white !important;
-        border-color: #444 !important;
-    }
+        body.dark-theme .btn,
+        body.dark-theme .buscar-btn {
+            background-color: #007bff !important;
+            color: white !important;
+            border-color: #444 !important;
+        }
 
-    body.dark-theme .btn:hover,
-    body.dark-theme .buscar-btn:hover {
-        background-color: #0056b3 !important;
-    }
+        body.dark-theme .btn:hover,
+        body.dark-theme .buscar-btn:hover {
+            background-color: #0056b3 !important;
+        }
 
-    /* Opciones de tipo de ayuda */
-    body.dark-theme .tipo-ayuda-option {
-        background-color: #252525 !important;
-        color: #e0e0e0 !important;
-        border-radius: 4px !important;
-    }
+        body.dark-theme .tipo-ayuda-option {
+            background-color: #252525 !important;
+            color: #e0e0e0 !important;
+            border-radius: 4px !important;
+        }
 
-    body.dark-theme .tipo-ayuda-option:hover {
-        background-color: #333 !important;
-    }
+        body.dark-theme .tipo-ayuda-option:hover {
+            background-color: #333 !important;
+        }
 
-    body.dark-theme .error {
-        color: #ff9999 !important;
-    }
+        body.dark-theme .error {
+            color: #ff9999 !important;
+        }
 
-    body.dark-theme input[readonly] {
-        background-color: #252525 !important;
-        color: #ccc !important;
-    }
+        body.dark-theme input[readonly] {
+            background-color: #252525 !important;
+            color: #ccc !important;
+        }
 
-    #themeToggle {
-        position: absolute;
-        margin-top:5%;
-        right: 20px;
-        z-index: 1000;
-    }
+        #themeToggle {
+            position: absolute;
+            margin-top: 3%;
+            right: 20px;
+            z-index: 1000;
+        }
     </style>
 </head>
 <?php
