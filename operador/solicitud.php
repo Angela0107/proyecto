@@ -321,7 +321,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
-            margin-left: 0 !important; /* Corrige el margin-left: 200px */
+            margin-left: 0 !important; 
             color: #333;
             font-size: 14px;
         }
@@ -696,8 +696,8 @@ include 'nav/index2.php';
                             <span class="text-small">(Clínica privada)</span>
                         </label>
                         <select name="presu_ban" class="form-control" required>
-                            <option value="2">NO</option>
-                            <option value="1">SI</option>
+                            <option value="2" <?php echo (isset($_POST['presu_ban']) && $_POST['presu_ban'] === '2') ? 'selected' : ''; ?>>NO</option>
+                            <option value="1" <?php echo (isset($_POST['presu_ban']) && $_POST['presu_ban'] === '1') ? 'selected' : ''; ?>>SI</option>
                         </select>
                     </div>
                 </div>
@@ -888,7 +888,7 @@ include 'nav/index2.php';
                         </label>
                         <select name="presu_ban" class="form-control" required>
                             <option value="2" <?php echo (isset($_POST['presu_ban']) && $_POST['presu_ban'] === '2') ? 'selected' : ''; ?>>NO</option>
-                            <option value="1" <?php echo (issetPOST['presu_ban'] && $_POST['presu_ban'] === '1') ? 'selected' : ''; ?>>SI</option>
+                            <option value="1" <?php echo (isset($_POST['presu_ban']) && $_POST['presu_ban'] === '1') ? 'selected' : ''; ?>>SI</option>
                         </select>
                     </div>
                 </div>
@@ -1103,6 +1103,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     cargarSectores(this.value);
                 });
                 
+                // Cargar sectores si hay parroquia preseleccionada (POST o BD)
                 const parroquiaSeleccionada = <?php echo json_encode($_POST['cod_par'] ?? $beneficiario['cod_par'] ?? ''); ?>;
                 if (parroquiaSeleccionada) {
                     cargarSectores(parroquiaSeleccionada);
