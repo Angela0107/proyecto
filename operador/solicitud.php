@@ -1,4 +1,6 @@
 <?php
+// CRÍTICO: Iniciar el búfer para evitar que espacios en blanco o advertencias rompan el JSON
+ob_start(); 
 session_start();
 if (!isset($_SESSION['id_usu'])) {
     header("Location: ../login.php");
@@ -30,22 +32,31 @@ require_once '../db.php';
 $conn->query("SET SESSION sql_mode=''");
 
 // ================= ENDPOINT AJAX PARA SECTORES =================
-if (isset($_GET['action']) && $_GET['action'] === 'getsec_benes' && isset($_GET['cod_par'])) {
-    // ob_clean() asegura que no haya basura HTML rompiendo el JSON
-    ob_clean();
-    header('Content-Type: application/json');
-    $cod_par = (int)$_GET['cod_par'];
-    $sql = "SELECT `ids_sec`, `nom_sec` FROM `sector` WHERE `cod_par` = ? ORDER BY `nom_sec` ASC";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $cod_par);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $data = [];
-    while ($row = $result->fetch_assoc()) {
-        $data[] = $row;
+if (isset($_GET['action']) && $_GET['action'] === 'getsec_benes') {
+    // 1. Limpiar absolutamente cualquier salida previa (HTML, espacios, advertencias)
+    while (ob_get_level()) {
+        ob_end_clean();
     }
+    
+    // 2. Definir que la respuesta será JSON estricto
+    header('Content-Type: application/json; charset=utf-8');
+    
+    $cod_par = isset($_GET['cod_par']) ? (int)$_GET['cod_par'] : 0;
+    $data = [];
+    
+    if ($cod_par > 0) {
+        $sql = "SELECT `ids_sec`, `nom_sec` FROM `sector` WHERE `cod_par` = ? ORDER BY `nom_sec` ASC";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("i", $cod_par);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        while ($row = $result->fetch_assoc()) {
+            $data[] = $row;
+        }
+        $stmt->close();
+    }
+    
     echo json_encode($data);
-    $stmt->close();
     exit;
 }
 // ===============================================================
@@ -76,7 +87,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (isset($_POST['buscar'])) {
         $ced_ben = trim($_POST['ced_ben']);
         if ($ced_ben) {
-            // CORRECCIÓN: Se extrae b.sec_ben AS id_sector para pre-seleccionar el dropdown correctamente
             $sql = "SELECT b.nom_ben, b.nac_ben, b.ced_ben, b.ape_ben, b.dir_ben, b.cor_ben, b.tlf_ben, p.nom_par, p.cod_par, s.nom_sec, b.sec_ben AS id_sector 
                     FROM beneficiario b
                     LEFT JOIN parroquias p ON p.cod_par = b.cod_par
@@ -142,7 +152,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         if ($result->num_rows > 0) {
             $beneficiario_id = $result->fetch_assoc()['ids_bene'];
-            // CORRECCIÓN: Actualizar beneficiario existente por si el operador corrigió la parroquia/sector
             $sql_upd = "UPDATE beneficiario SET nom_ben=?, ape_ben=?, dir_ben=?, tlf_ben=?, cod_par=?, sec_ben=? WHERE ids_bene=?";
             $stmt_upd = $conn->prepare($sql_upd);
             $stmt_upd->bind_param("ssssssi", $nom_ben, $ape_ben, $dir_ben, $tlf_ben, $cod_par, $sec_ben, $beneficiario_id);
@@ -1068,14 +1077,23 @@ document.addEventListener("DOMContentLoaded", function() {
                 }
                 
                 fetch(window.location.pathname + `?action=getsec_benes&cod_par=${encodeURIComponent(codPar)}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        let html = '<option value="">-- Seleccione --</option>';
-                        data.forEach(item => {
-                            html += `<option value="${item.ids_sec}">${item.nom_sec}</option>`;
-                        });
-                        sectorSelect.innerHTML = html;
-                        sectorSelect.disabled = false;
+                    .then(response => {
+                        if (!response.ok) throw new Error("Error HTTP");
+                        return response.text(); 
+                    })
+                    .then(text => {
+                        try {
+                            const data = JSON.parse(text);
+                            let html = '<option value="">-- Seleccione --</option>';
+                            data.forEach(item => {
+                                html += `<option value="${item.ids_sec}">${item.nom_sec}</option>`;
+                            });
+                            sectorSelect.innerHTML = html;
+                            sectorSelect.disabled = false;
+                        } catch(e) {
+                            console.error("La respuesta no es JSON válido:", text);
+                            sectorSelect.innerHTML = '<option value="">Error al cargar</option>';
+                        }
                     })
                     .catch(error => {
                         console.error('Error cargando sectores:', error);
@@ -1089,7 +1107,6 @@ document.addEventListener("DOMContentLoaded", function() {
                     cargarSectores(this.value);
                 });
                 
-                // Cargar sectores si hay parroquia preseleccionada (POST o BD)
                 const parroquiaSeleccionada = <?php echo json_encode($_POST['cod_par'] ?? $beneficiario['cod_par'] ?? ''); ?>;
                 if (parroquiaSeleccionada) {
                     cargarSectores(parroquiaSeleccionada);
