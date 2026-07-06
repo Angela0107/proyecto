@@ -26,14 +26,13 @@ $contr_usu = $_SESSION['contr_usu'] ?? '';
 $id_usu = $_SESSION['id_usu'];
 $nom_usu = $_SESSION['nom_usu'] ?? '';
 
-// Estandarizado con la extensión .php fija de la raíz
 require_once '../db.php';
-
-// Fuerza a MySQL a relajar el modo estricto en esta sesión
 $conn->query("SET SESSION sql_mode=''");
 
 // ================= ENDPOINT AJAX PARA SECTORES =================
 if (isset($_GET['action']) && $_GET['action'] === 'getsec_benes' && isset($_GET['cod_par'])) {
+    // ob_clean() asegura que no haya basura HTML rompiendo el JSON
+    ob_clean();
     header('Content-Type: application/json');
     $cod_par = (int)$_GET['cod_par'];
     $sql = "SELECT `ids_sec`, `nom_sec` FROM `sector` WHERE `cod_par` = ? ORDER BY `nom_sec` ASC";
@@ -77,9 +76,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (isset($_POST['buscar'])) {
         $ced_ben = trim($_POST['ced_ben']);
         if ($ced_ben) {
-            $sql = "SELECT b.nom_ben, b.nac_ben, b.ced_ben, b.ape_ben, b.dir_ben, b.cor_ben, b.tlf_ben, p.nom_par, p.cod_par, s.nom_sec FROM beneficiario b
-INNER JOIN parroquias p ON p.cod_par = b.cod_par
-INNER JOIN sector s ON b.sec_ben = s.ids_sec WHERE ced_ben = ?";
+            // CORRECCIÓN: Se extrae b.sec_ben AS id_sector para pre-seleccionar el dropdown correctamente
+            $sql = "SELECT b.nom_ben, b.nac_ben, b.ced_ben, b.ape_ben, b.dir_ben, b.cor_ben, b.tlf_ben, p.nom_par, p.cod_par, s.nom_sec, b.sec_ben AS id_sector 
+                    FROM beneficiario b
+                    LEFT JOIN parroquias p ON p.cod_par = b.cod_par
+                    LEFT JOIN sector s ON b.sec_ben = s.ids_sec 
+                    WHERE ced_ben = ?";
             $stmt = $conn->prepare($sql);
             $stmt->bind_param("s", $ced_ben);
             $stmt->execute();
@@ -94,7 +96,7 @@ INNER JOIN sector s ON b.sec_ben = s.ids_sec WHERE ced_ben = ?";
         $ced_ben_requi = $_POST['ced_ben_requi'] ?? '2';
         $nac_ben = $_POST['nac_ben'] ?? '';
         $nom_ben = $_POST['nom_ben'] ?? $_POST['nombre'] ?? ''; 
-        $ape_ben = $_POST['ape_ben'] ?? ''; // CORRECCIÓN 1: Capturar el apellido del POST
+        $ape_ben = $_POST['ape_ben'] ?? ''; 
         $dir_ben = $_POST['dir_ben'] ?? '';
         $cod_par = $_POST['cod_par'] ?? 6; 
         $cor_ben = $_POST['cor_ben'] ?? '';
@@ -140,12 +142,15 @@ INNER JOIN sector s ON b.sec_ben = s.ids_sec WHERE ced_ben = ?";
 
         if ($result->num_rows > 0) {
             $beneficiario_id = $result->fetch_assoc()['ids_bene'];
+            // CORRECCIÓN: Actualizar beneficiario existente por si el operador corrigió la parroquia/sector
+            $sql_upd = "UPDATE beneficiario SET nom_ben=?, ape_ben=?, dir_ben=?, tlf_ben=?, cod_par=?, sec_ben=? WHERE ids_bene=?";
+            $stmt_upd = $conn->prepare($sql_upd);
+            $stmt_upd->bind_param("ssssssi", $nom_ben, $ape_ben, $dir_ben, $tlf_ben, $cod_par, $sec_ben, $beneficiario_id);
+            $stmt_upd->execute();
         } else {
-            // CORRECCIÓN 2: Añadir ape_ben a las columnas y los marcadores de posición del INSERT
             $sql_ins = "INSERT INTO beneficiario (nac_ben, ced_ben, nom_ben, ape_ben, dir_ben, cod_par, cor_ben, tlf_ben, sec_ben) 
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt_ins = $conn->prepare($sql_ins);
-            // CORRECCIÓN 3: Añadir la variable $ape_ben con su respectivo tipo "s" en el bind_param
             $stmt_ins->bind_param("sssssssss", $nac_ben, $ced_ben, $nom_ben, $ape_ben, $dir_ben, $cod_par, $cor_ben, $tlf_ben, $sec_ben);
             if (!$stmt_ins->execute()) {
                 $mensaje = "Error al insertar beneficiario: " . $stmt_ins->error;
@@ -573,7 +578,7 @@ include 'nav/index2.php';
         <?php endif; ?>
 
         <?php if ($beneficiario): ?>
-            <form method="post">
+            <form method="post" id="formAgregar">
                 <div class="container2">
                     <h2>Información del Beneficiario</h2>
                     <?php
@@ -587,54 +592,59 @@ include 'nav/index2.php';
                     }?>
                     <div class="form-row">
                         <div class="col-md-6">
-                            <p>Cédula: <input type="text" name="ced_ben2" value="<?php echo htmlspecialchars($beneficiario['ced_ben']); ?>" readonly required></p>
+                            <p>Cédula: <input type="text" name="ced_ben2" class="form-control" value="<?php echo htmlspecialchars($beneficiario['ced_ben']); ?>" readonly required></p>
                         </div>
                         <div class="col-md-6">
-                            <p>Nacionalidad: <input type="text" name="nac_ben" value="<?php echo htmlspecialchars($beneficiario['nac_ben']); ?>" readonly required></p>
+                            <p>Nacionalidad: <input type="text" name="nac_ben" class="form-control" value="<?php echo htmlspecialchars($beneficiario['nac_ben']); ?>" readonly required></p>
                         </div>
                     </div>
                      <div class="form-row">
-                           <div class="col-md-6">
-                    <p>Nombre: <input type="text" name="nom_ben" class="datos" value="<?php echo htmlspecialchars($beneficiario['nom_ben']); ?>" readonly required></p>
+                        <div class="col-md-6">
+                            <p>Nombre: <input type="text" name="nom_ben" class="form-control" value="<?php echo htmlspecialchars($beneficiario['nom_ben']); ?>" required onkeyup="this.value = this.value.toUpperCase()"></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p>Apellido: <input type="text" name="ape_ben" class="form-control" value="<?php echo htmlspecialchars($beneficiario['ape_ben']); ?>" required onkeyup="this.value = this.value.toUpperCase()"></p>
+                        </div>
                     </div>
-                       <div class="col-md-6">
-                    <p>Apellido: <input type="text" name="ape_ben" class="datos" value="<?php echo htmlspecialchars($beneficiario['ape_ben']); ?>" readonly required></p>
-                    </div></div>
                     <div class="form-row">
                         <div class="col-md-6">
-                            <p>Dirección: <input type="text" name="dir_ben" value="<?php echo htmlspecialchars($beneficiario['dir_ben']); ?>" readonly required></p>
+                            <p>Dirección: <input type="text" name="dir_ben" class="form-control" value="<?php echo htmlspecialchars($beneficiario['dir_ben']); ?>" required onkeyup="this.value = this.value.toUpperCase()"></p>
                         </div>
-
-                        
                         <div class="col-md-6">
-                            <p>Parroquia: 
-                                <?php
-                                $cod_par = $beneficiario['cod_par'] ?? 6;
-                                $nom_par = 'FUERA DEL MUNICIPIO';
-                                foreach ($cod_pars as $par) {
-                                    if ($par['cod_par'] == $cod_par) {
-                                        $nom_par = $par['nom_par'];
-                                        break;
-                                    }
-                                }
-                                echo htmlspecialchars($nom_par);
+                            <p>Teléfono: <input type="text" name="tlf_ben" class="form-control" value="<?php echo htmlspecialchars($beneficiario['tlf_ben']); ?>" required maxlength="11" pattern="(041|042|0276)[0-9]{7,10}"></p>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="col-md-6">
+                            <label class="form-label">Parroquia:</label>
+                            <select name="cod_par" id="cod_par" class="form-control" required>
+                                <option value="">-- Seleccione --</option>
+                                <?php 
+                                $b_cod_par = $beneficiario['cod_par'] ?? '';
+                                foreach ($cod_pars as $par): 
                                 ?>
-                                <input type="hidden" name="cod_par" value="<?php echo (int)$cod_par; ?>">
+                                    <option value="<?php echo (int)$par['cod_par']; ?>" 
+                                        <?php echo ($b_cod_par == $par['cod_par']) ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($par['nom_par']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Sector:</label>
+                            <select name="sec_ben" id="sec_ben" class="form-control" required>
+                                <option value="">-- Seleccione parroquia primero --</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="col-md-6">
+                            <p>Condición: 
+                                <input type="text" class="form-control" value="<?php echo $condicion_texto; ?>" readonly>
+                                <input type="hidden" name="cor_ben" value="<?php echo htmlspecialchars($valor); ?>">
                             </p>
                         </div>
                     </div>
-                    <div class="form-row">
-                        <div class="col-md-6">
-    <p>Condición: 
-        <input type="text" value="<?php echo $condicion_texto; ?>" readonly>
-        <input type="hidden" name="cor_ben" value="<?php echo htmlspecialchars($valor); ?>">
-    </p>
-</div>
-                        <div class="col-md-6">
-                            <p>Teléfono: <input type="text" name="tlf_ben" value="<?php echo htmlspecialchars($beneficiario['tlf_ben']); ?>" readonly required></p>
-                        </div>
-                    </div>
-                    <p>Sector: <input type="text" name="sec_ben" class="datos" value="<?php echo htmlspecialchars($beneficiario['nom_sec']); ?>" readonly required></p>
                 </div>
 
                 <label for="tipo_ayuda">Tipo de Ayuda:</label>
@@ -740,7 +750,7 @@ include 'nav/index2.php';
 
                 
                 <label for="descripcion">Descripción:</label>
-                <textarea name="descripcion" rows="3" required></textarea>
+                <textarea name="descripcion" class="form-control" rows="3" required></textarea>
 
                 <div class="form-row">
                     <div class="col-md-6">
@@ -755,12 +765,12 @@ include 'nav/index2.php';
 
         <?php else: ?>
             <h3>Agregar Solicitud (Nuevo Beneficiario)</h3><br>
-            <form method="post">
+            <form method="post" id="formAgregarNuevo">
                 <input type="hidden" name="ced_ben2" value="<?php echo htmlspecialchars($ced_ben); ?>">
                 <div class="form-row">
                     <div class="col-md-6">
                         <label class="form-label">Cédula:</label>
-                        <input type="text" value="<?php echo htmlspecialchars($ced_ben); ?>" readonly required>
+                        <input type="text" class="form-control" value="<?php echo htmlspecialchars($ced_ben); ?>" readonly required>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Nacionalidad:</label>
@@ -774,20 +784,20 @@ include 'nav/index2.php';
                 <div class="form-row">
                     <div class="col-md-6">
                 <label class="form-label">Nombre:</label>
-                <input type="text" name="nom_ben" value="<?php echo htmlspecialchars($_POST['nom_ben'] ?? ''); ?>" required onkeyup="this.value = this.value.toUpperCase()">
+                <input type="text" name="nom_ben" class="form-control" value="<?php echo htmlspecialchars($_POST['nom_ben'] ?? ''); ?>" required onkeyup="this.value = this.value.toUpperCase()">
 </div>
   <div class="col-md-6">
                 <label class="form-label">Apellidos:</label>
-                <input type="text" name="ape_ben" value="<?php echo htmlspecialchars($_POST['ape_ben'] ?? ''); ?>" required onkeyup="this.value = this.value.toUpperCase()">
+                <input type="text" name="ape_ben" class="form-control" value="<?php echo htmlspecialchars($_POST['ape_ben'] ?? ''); ?>" required onkeyup="this.value = this.value.toUpperCase()">
 </div></div>
                 <div class="form-row">
                     <div class="col-md-6">
                         <label class="form-label">Dirección:</label>
-                        <input type="text" name="dir_ben" value="<?php echo htmlspecialchars($_POST['dir_ben'] ?? ''); ?>" required onkeyup="this.value = this.value.toUpperCase()">
+                        <input type="text" name="dir_ben" class="form-control" value="<?php echo htmlspecialchars($_POST['dir_ben'] ?? ''); ?>" required onkeyup="this.value = this.value.toUpperCase()">
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Teléfono:</label>
-                        <input type="text" name="tlf_ben" value="<?php echo htmlspecialchars($_POST['tlf_ben'] ?? ''); ?>" required maxlength="11" 
+                        <input type="text" name="tlf_ben" class="form-control" value="<?php echo htmlspecialchars($_POST['tlf_ben'] ?? ''); ?>" required maxlength="11" 
                             pattern="(041|042|0276)[0-9]{7,10}"
                             title="Ej: 04141234567">
                     </div>
@@ -930,7 +940,7 @@ include 'nav/index2.php';
                 </div>
 
                 <label class="checkbox">Descripción:</label>
-                <textarea name="descripcion" rows="3" required><?php echo htmlspecialchars($_POST['descripcion'] ?? ''); ?></textarea>
+                <textarea name="descripcion" class="form-control" rows="3" required><?php echo htmlspecialchars($_POST['descripcion'] ?? ''); ?></textarea>
 
                 <div class="form-row">
                     <div class="col-md-6">
@@ -1057,7 +1067,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     return;
                 }
                 
-                fetch(`?action=getsec_benes&cod_par=${encodeURIComponent(codPar)}`)
+                fetch(window.location.pathname + `?action=getsec_benes&cod_par=${encodeURIComponent(codPar)}`)
                     .then(response => response.json())
                     .then(data => {
                         let html = '<option value="">-- Seleccione --</option>';
@@ -1079,10 +1089,11 @@ document.addEventListener("DOMContentLoaded", function() {
                     cargarSectores(this.value);
                 });
                 
-                const parroquiaSeleccionada = <?php echo json_encode($_POST['cod_par'] ?? ''); ?>;
+                // Cargar sectores si hay parroquia preseleccionada (POST o BD)
+                const parroquiaSeleccionada = <?php echo json_encode($_POST['cod_par'] ?? $beneficiario['cod_par'] ?? ''); ?>;
                 if (parroquiaSeleccionada) {
                     cargarSectores(parroquiaSeleccionada);
-                    const sectorSeleccionado = <?php echo json_encode($_POST['sec_ben'] ?? ''); ?>;
+                    const sectorSeleccionado = <?php echo json_encode($_POST['sec_ben'] ?? $beneficiario['id_sector'] ?? ''); ?>;
                     if (sectorSeleccionado && sectorSelect) {
                         setTimeout(() => {
                             if (sectorSelect.querySelector(`option[value="${sectorSeleccionado}"]`)) {
